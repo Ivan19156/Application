@@ -1,0 +1,46 @@
+<ng-container *ngIf="vm$ | async as vm">
+  <a [routerLink]="['/events', vm.event.id]" class="event-card-link">
+    <mat-card class="event-card">
+      <mat-card-content class="flex flex-col flex-grow">
+        <h3 class="mat-h3 font-bold mb-2">{{ vm.event.name }}</h3>
+        <p class="text-gray-600 text-sm mb-4 flex-grow">{{ vm.event.description }}</p>
+
+        <div class="event-meta">
+          <div class="meta-item">
+            <mat-icon>calendar_today</mat-icon>
+            <span>{{ vm.event.date | date:'mediumDate' }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ vm.event.date | date:'shortTime' }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon>location_on</mat-icon>
+            <span>{{ vm.event.location }}</span>
+          </div>
+          <div class="meta-item">
+            <mat-icon>people</mat-icon>
+            <span>{{ vm.event.participants }} / {{ vm.event.capacity ?? 'Unlimited' }} participants</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="p-4">
+        <button *ngIf="vm.isFull" mat-flat-button disabled class="w-full full-btn">
+          <mat-icon>block</mat-icon>
+          <span>Full</span>
+        </button>
+
+        <button *ngIf="!vm.isFull && vm.isJoined" mat-stroked-button color="warn" class="w-full leave-btn" (click)="stopPropagation($event); leave()" [disabled]="vm.isLoading">
+          <mat-icon>logout</mat-icon>
+          <span>Leave</span>
+        </button>
+
+        <button *ngIf="!vm.isFull && !vm.isJoined" mat-flat-button class="w-full join-btn" (click)="stopPropagation($event); join()" [disabled]="vm.isLoading">
+          <mat-icon>person_add</mat-icon>
+          <span>Join Event</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </a>
+</ng-container>

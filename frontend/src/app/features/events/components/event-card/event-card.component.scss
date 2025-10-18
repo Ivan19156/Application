@@ -1,0 +1,87 @@
+// Змушуємо картку займати всю доступну висоту в сітці
+:host {
+  display: flex;
+  height: 100%;
+}
+
+.event-card {
+  display: flex;
+  flex-direction: column; // Розміщуємо контент і кнопку вертикально
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px !important; // Важливо для перезапису стилів Material
+  box-shadow: none !important;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+// flex-grow змушує блок з контентом розтягуватися,
+// притискаючи кнопку до низу
+.flex-grow {
+  flex-grow: 1;
+}
+
+.event-meta {
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Дві колонки для мета-даних
+  gap: 0.75rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555;
+  font-size: 0.875rem;
+
+  mat-icon {
+    font-size: 1.125rem;
+    height: 1.125rem;
+    width: 1.125rem;
+  }
+}
+
+.join-btn {
+  background-color: #28a745; // Зелений колір
+  color: white;
+  padding: 1.25rem 0 !important; // Робимо кнопку вищою
+  font-size: 1rem !important;
+}
+
+.event-card-link {
+  text-decoration: none;
+  color: inherit; // Успадковуємо колір тексту
+  display: block; // Важливо для правильного відображення
+  height: 100%;
+}
+// ... (існуючі стилі) ...
+
+.join-btn {
+  background-color: #28a745 !important; // Зелений
+  color: white !important;
+}
+
+.leave-btn {
+  color: #dc3545 !important; // Червоний (warn колір Material)
+  border-color: #dc3545 !important;
+}
+
+.full-btn {
+  background-color: #e9ecef !important; // Сірий фон для неактивної
+  color: #6c757d !important; // Сірий текст
+}
+
+// Загальні стилі для кнопок в картці
+mat-card-actions button {
+  padding: 1rem 0 !important;
+  font-size: 1rem !important;
+  display: flex; // Для іконки та тексту
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}

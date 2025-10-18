@@ -1,0 +1,31 @@
+.event-grid {
+  display: grid;
+  // Створюємо колонки шириною мінімум 350px, які заповнюють доступний простір
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem; // Відстань між картками
+}
+
+// Загальні стилі для контейнера сторінки
+.container {
+  max-width: 1200px;
+  margin: 0 auto; // Центруємо контейнер
+  padding: 2rem;
+}
+
+// ... (існуючі стилі) ...
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px; // Щоб спінер було видно
+  margin-top: 2rem;
+}
+
+.no-results {
+    grid-column: 1 / -1; // Займає всю ширину сітки
+    text-align: center;
+    color: #777;
+    font-size: 1.1rem;
+    margin-top: 2rem;
+}

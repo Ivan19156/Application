@@ -1,0 +1,32 @@
+.form-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 50px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.submit-btn {
+  width: 100%;
+}
+
+.switch-form {
+  text-align: center;
+  margin-top: 1rem;
+  padding: 16px;
+
+  a {
+    text-decoration: none;
+    color: #3f51b5; // Основний колір теми Azure/Blue
+    font-weight: bold;
+    margin-left: 5px;
+  }
+}

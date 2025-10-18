@@ -1,0 +1,84 @@
+<div *ngIf="isLoading" class="loading-spinner">
+  <mat-spinner></mat-spinner>
+  <p>Loading your events...</p>
+</div>
+
+<div *ngIf="!isLoading" class="calendar-container">
+
+  <!-- Header -->
+  <div class="calendar-header">
+    <h1 class="calendar-title">My Events</h1>
+    <div class="view-toggles">
+      <button 
+        mat-stroked-button 
+        (click)="setView(CalendarView.Month)" 
+        [class.active]="view === CalendarView.Month">
+        <mat-icon>calendar_month</mat-icon>
+        <span>Month</span>
+      </button>
+      <button 
+        mat-stroked-button 
+        (click)="setView(CalendarView.Week)" 
+        [class.active]="view === CalendarView.Week">
+        <mat-icon>calendar_view_week</mat-icon>
+        <span>Week</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Calendar Navigation -->
+  <div class="calendar-navigation">
+    <button mat-icon-button (click)="previousMonth()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    
+    <h2 class="current-month">
+      {{ viewDate | date: 'MMMM yyyy' }}
+    </h2>
+    
+    <button mat-icon-button (click)="nextMonth()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    
+    <button mat-stroked-button (click)="today()" class="today-btn">
+      Today
+    </button>
+  </div>
+
+  <!-- Calendar Views -->
+  <div [ngSwitch]="view" class="calendar-wrapper">
+    
+    <!-- Month View -->
+    <mwl-calendar-month-view
+      *ngSwitchCase="CalendarView.Month"
+      [viewDate]="viewDate"
+      [events]="events"
+      (eventClicked)="eventClicked($event)">
+    </mwl-calendar-month-view>
+
+    <!-- Week View -->
+    <mwl-calendar-week-view
+      *ngSwitchCase="CalendarView.Week"
+      [viewDate]="viewDate"
+      [events]="events"
+      (eventClicked)="eventClicked($event)">
+    </mwl-calendar-week-view>
+  </div>
+
+  <!-- No Events Message -->
+  <div *ngIf="events.length === 0" class="no-events-message">
+    <mat-icon>event_busy</mat-icon>
+    <p>You are not part of any events yet.</p>
+    <p class="subtitle">Explore public events and join.</p>
+    <button mat-raised-button color="primary" routerLink="/events">
+      <mat-icon>explore</mat-icon>
+      Browse Events
+    </button>
+  </div>
+
+  <!-- Events Count -->
+  <div *ngIf="events.length > 0" class="events-count">
+    Total events: <strong>{{ events.length }}</strong>
+  </div>
+
+</div>

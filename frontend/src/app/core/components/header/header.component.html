@@ -1,0 +1,26 @@
+<mat-toolbar color="primary" class="main-header">
+  <div class="toolbar-left">
+    <button mat-icon-button aria-label="Menu"> <mat-icon>menu</mat-icon> </button>
+  </div>
+
+  <div class="toolbar-right">
+    <ng-container *ngIf="isAuthenticated()">
+      <a routerLink="/events" class="nav-link"> <mat-icon>list</mat-icon> <span>Events</span> </a>
+      <a routerLink="/my-events" class="nav-link"> <mat-icon>calendar_today</mat-icon> <span>My Events</span> </a>
+      <button mat-flat-button color="accent" class="create-event-btn" routerLink="/events/new"> <mat-icon>add</mat-icon> <span>Create Event</span> </button>
+    </ng-container>
+
+    <ng-container *ngIf="isAuthenticated(); else loggedOutButtons">
+      <div class="user-info" *ngIf="currentUser() as user">
+        <div class="user-avatar"> <span>{{ user.name.charAt(0).toUpperCase() }}</span> </div>
+        <span>{{ user.name }}</span>
+      </div>
+      <button mat-icon-button aria-label="Logout" (click)="logout()"> <mat-icon>logout</mat-icon> </button>
+    </ng-container>
+
+    <ng-template #loggedOutButtons>
+       <a mat-stroked-button routerLink="/auth/login" class="nav-link">Log In</a>
+       <a mat-flat-button color="primary" routerLink="/auth/register" class="nav-link">Sign Up</a>
+    </ng-template>
+  </div>
+</mat-toolbar>

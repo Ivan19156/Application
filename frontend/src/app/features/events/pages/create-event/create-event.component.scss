@@ -1,0 +1,74 @@
+.form-container {
+  display: flex;
+  justify-content: center;
+  padding: 50px 20px;
+}
+
+.form-card {
+  width: 100%;
+  max-width: 600px;
+}
+
+mat-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  .back-button {
+    margin-right: 1rem;
+    color: #555;
+  }
+
+  mat-card-title {
+    font-size: 1.75rem;
+    font-weight: bold;
+  }
+
+  mat-card-subtitle {
+    color: #777;
+    margin-top: 4px;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 1rem; // Більший відступ між полями
+}
+
+.visibility-group {
+  margin: 1.5rem 0;
+
+  .visibility-label {
+    display: block; // Заголовок на новому рядку
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    color: #333;
+  }
+
+  mat-radio-group {
+    display: flex;
+    flex-direction: column; // Розміщуємо радіо-кнопки вертикально
+    gap: 0.75rem;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end; // Кнопки праворуч
+  gap: 1rem;
+  margin-top: 2rem;
+
+  button {
+    padding: 0.75rem 1.5rem; // Розмір кнопок
+    font-size: 1rem;
+  }
+}
+
+.date-time-row {
+  display: flex;
+  gap: 1rem; // Відстань між полями
+
+  mat-form-field {
+    flex: 1; // Кожне поле займає однакову ширину
+  }
+}

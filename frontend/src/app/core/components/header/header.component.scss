@@ -1,0 +1,64 @@
+.main-header {
+  display: flex;
+  justify-content: space-between; // Keeps left and right content at opposite ends
+  align-items: center;
+  padding: 0 24px;
+  background-color: white !important;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.toolbar-left {
+  display: flex; // Keep flex for alignment
+  align-items: center;
+  // No gap needed here if only one item (menu icon)
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem; // Spacing between all items on the right
+}
+
+.nav-link {
+  color: #555;
+  text-decoration: none;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+}
+
+.create-event-btn {
+  background-color: #7c3aed !important;
+  color: white;
+  // Removed margin-left: 1rem; as gap handles spacing
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 1px solid #e0e0e0;
+  padding-left: 1.5rem;
+  // Removed margin-left: 1rem; as gap handles spacing
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e9d5ff;
+  color: #7c3aed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.875rem;
+}
