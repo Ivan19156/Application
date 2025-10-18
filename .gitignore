@@ -1,0 +1,14 @@
+# User secrets file (usually outside repo, but good practice)
+**/secrets.json
+
+# Development settings that might contain secrets
+**/appsettings.Development.json
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# IDE files
+.vs/
+*.suo
+*.user
