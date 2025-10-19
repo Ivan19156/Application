@@ -21,9 +21,8 @@
 **/.settings
 **/.toolstarget
 
-# Docker files to ignore in builds
+# Docker helper files to ignore
 **/.dockerignore
-
 
 # Node modules
 **/node_modules
