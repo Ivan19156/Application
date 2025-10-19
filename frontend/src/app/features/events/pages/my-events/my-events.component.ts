@@ -32,7 +32,7 @@ const colors: any = {
     NgSwitch, 
     NgSwitchCase,
     DatePipe,
-    RouterModule, // 👈 Для routerLink в template
+    RouterModule,
     MatButtonModule, 
     MatIconModule, 
     MatProgressSpinnerModule,
@@ -51,8 +51,7 @@ export class MyEventsComponent implements OnInit, OnDestroy {
   view: CalendarView = CalendarView.Month;
   CalendarView = CalendarView;
   
-  // Встановлюємо viewDate на листопад 2025
-  viewDate: Date = new Date(2025, 10, 17); // 17 листопада 2025
+  viewDate: Date = new Date(2025, 10, 17); 
 
   events: CalendarEvent[] = [];
   isLoading = true;
@@ -89,13 +88,13 @@ export class MyEventsComponent implements OnInit, OnDestroy {
           return {
             id: event.id,
             start: eventDate,
-            title: `${timeStr} ${event.name}`, // Додаємо час до назви
+            title: `${timeStr} ${event.name}`, 
             color: colors.purple,
             meta: {
               location: event.location,
               participants: event.participants,
               capacity: event.capacity,
-              fullTitle: event.name // Зберігаємо повну назву для tooltip
+              fullTitle: event.name 
             }
           };
         });
@@ -121,6 +120,7 @@ export class MyEventsComponent implements OnInit, OnDestroy {
   setView(view: CalendarView): void {
     console.log('👁️ Switching view to:', view);
     this.view = view;
+    this.cdr.detectChanges();
   }
 
   eventClicked({ event }: { event: CalendarEvent }): void {
@@ -128,24 +128,80 @@ export class MyEventsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/events', event.id]);
   }
 
-  // Навігація по календарю
-  previousMonth(): void {
+ 
+  previous(): void {
     const newDate = new Date(this.viewDate);
-    newDate.setMonth(newDate.getMonth() - 1);
+    
+    if (this.view === CalendarView.Month) {
+      newDate.setMonth(newDate.getMonth() - 1);
+      console.log('⬅️ Previous month:', newDate);
+    } else if (this.view === CalendarView.Week) {
+      newDate.setDate(newDate.getDate() - 7);
+      console.log('⬅️ Previous week:', newDate);
+    }
+    
     this.viewDate = newDate;
-    console.log('⬅️ Previous month:', this.viewDate);
+    this.cdr.detectChanges();
   }
 
-  nextMonth(): void {
+  next(): void {
     const newDate = new Date(this.viewDate);
-    newDate.setMonth(newDate.getMonth() + 1);
+    
+    if (this.view === CalendarView.Month) {
+      newDate.setMonth(newDate.getMonth() + 1);
+      console.log('➡️ Next month:', newDate);
+    } else if (this.view === CalendarView.Week) {
+      newDate.setDate(newDate.getDate() + 7);
+      console.log('➡️ Next week:', newDate);
+    }
+    
     this.viewDate = newDate;
-    console.log('➡️ Next month:', this.viewDate);
+    this.cdr.detectChanges();
   }
 
   today(): void {
     this.viewDate = new Date();
     console.log('📍 Back to today:', this.viewDate);
+    this.cdr.detectChanges();
+  }
+
+  getNavigationLabel(): string {
+    if (this.view === CalendarView.Month) {
+      return this.viewDate.toLocaleDateString('en-US', { 
+        month: 'long', 
+        year: 'numeric' 
+      });
+    } else if (this.view === CalendarView.Week) {
+      const weekStart = this.getWeekStartForCalendar(this.viewDate);
+      const weekEnd = this.getWeekEndForCalendar(this.viewDate);
+      
+      const startStr = weekStart.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const endStr = weekEnd.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      return `${startStr} - ${endStr}`;
+    }
+    
+    return '';
+  }
+
+  private getWeekStartForCalendar(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay(); 
+    const diff = d.getDate() - day; 
+    return new Date(d.setDate(diff));
+  }
+
+  private getWeekEndForCalendar(date: Date): Date {
+    const weekStart = this.getWeekStartForCalendar(date);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); 
+    return weekEnd;
   }
 }
-

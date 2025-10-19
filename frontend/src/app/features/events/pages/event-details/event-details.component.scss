@@ -7,7 +7,7 @@
 
 .details-container {
   display: grid;
-  grid-template-columns: 2fr 1fr; // Створюємо дві колонки
+  grid-template-columns: 2fr 1fr; 
   gap: 2rem;
   max-width: 1200px;
   margin: 2rem auto;
@@ -67,7 +67,6 @@
   width: 100%;
 }
 
-// ... (існуючі стилі) ...
 
 .w-full {
   width: 100%;
@@ -109,16 +108,15 @@
   }
 }
 
-// ... (існуючі стилі) ...
 
 .organizer-actions {
   display: flex;
   gap: 1rem;
-  padding: 0 16px 16px 16px; // Відступи, як у mat-card-actions
-  border-top: 1px solid rgba(0,0,0,0.12); // Розділювач
+  padding: 0 16px 16px 16px; 
+  border-top: 1px solid rgba(0,0,0,0.12);
 
   button {
-    flex: 1; // Кнопки займають однакову ширину
+    flex: 1;
     padding: 0.75rem 0 !important;
     display: flex;
     align-items: center;

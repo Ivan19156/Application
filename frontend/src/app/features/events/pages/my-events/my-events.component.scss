@@ -141,9 +141,9 @@
   }
 }
 
-// Calendar Styling Overrides
+
 ::ng-deep {
-  // Month View
+ 
   .cal-month-view {
     .cal-header {
       background-color: #f8f9fa;
@@ -236,12 +236,11 @@
       gap: 4px;
       line-height: 1.3;
 
-      // Показуємо повний текст
+  
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
 
-      // Додаємо іконку часу
       &::before {
         content: '🕐';
         font-size: 0.7rem;
@@ -256,7 +255,7 @@
         position: relative;
       }
 
-      // Tooltip при наведенні
+
       &:hover::after {
         content: attr(title);
         position: absolute;
@@ -275,7 +274,6 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
 
-      // Стрілочка tooltip
       &:hover::before {
         content: '';
         position: absolute;
@@ -288,7 +286,6 @@
       }
     }
 
-    // Якщо в дні більше 3 подій, показуємо компактно
     .cal-cell:has(.cal-event:nth-child(4)) {
       .cal-event {
         padding: 2px 6px;
@@ -296,16 +293,14 @@
         margin: 1px 0;
 
         &::before {
-          display: none; // Ховаємо іконку для економії місця
+          display: none; 
         }
       }
     }
 
-    // Якщо подій дуже багато (5+), показуємо кількість
     .cal-cell {
       position: relative;
 
-      // Лічильник додаткових подій
       &:has(.cal-event:nth-child(5)) {
         .cal-event:nth-child(n+4) {
           display: none !important;
@@ -333,7 +328,6 @@
     }
   }
 
-  // Week View
   .cal-week-view {
     .cal-day-headers {
       background-color: #f8f9fa;
@@ -386,7 +380,6 @@
   }
 }
 
-// Responsive
 @media (max-width: 768px) {
   .calendar-container {
     padding: 0 1rem;

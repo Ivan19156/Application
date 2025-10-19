@@ -1,31 +1,273 @@
-.event-grid {
-  display: grid;
-  // Створюємо колонки шириною мінімум 350px, які заповнюють доступний простір
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem; // Відстань між картками
-}
-
-// Загальні стилі для контейнера сторінки
 .container {
-  max-width: 1200px;
-  margin: 0 auto; // Центруємо контейнер
+  max-width: 1400px;
+  margin: 0 auto;
   padding: 2rem;
 }
 
-// ... (існуючі стилі) ...
+.header-section {
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #666;
+  }
+}
+
+.total-count {
+  color: #7c3aed;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.load-more-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin: 3rem 0;
+  padding: 2rem;
+
+  .load-more-button {
+    min-width: 200px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+
+    mat-spinner {
+      ::ng-deep circle {
+        stroke: white;
+      }
+    }
+  }
+
+  .showing-count {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0;
+    text-align: center;
+  }
+}
+
+.all-loaded {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 3rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: 12px;
+  border: 2px solid #86efac;
+
+  mat-icon {
+    color: #22c55e;
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  p {
+    color: #166534;
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.search-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+
+  .search-field {
+    flex: 1;
+    max-width: 600px;
+    
+    ::ng-deep {
+      .mat-mdc-form-field-flex {
+        align-items: center;
+      }
+    }
+  }
+
+  .search-button {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.5rem;
+    
+    mat-icon {
+      margin: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    
+    .search-field {
+      width: 100%;
+      max-width: none;
+    }
+
+    .search-button {
+      width: 100%;
+    }
+  }
+}
+
+.search-info {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  p {
+    margin: 0;
+    color: #555;
+    font-size: 0.95rem;
+
+    strong {
+      color: #7c3aed;
+      font-weight: 600;
+    }
+  }
+
+  .clear-filter {
+    color: #7c3aed;
+    text-transform: none;
+  }
+}
 
 .loading-spinner {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 200px; // Щоб спінер було видно
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+
+  p {
+    color: #666;
+    font-size: 1rem;
+    margin-top: 1rem;
+  }
+}
+
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+  text-align: center;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #f44336;
+  }
+
+  p {
+    color: #666;
+    font-size: 1rem;
+    max-width: 400px;
+  }
+
+  button {
+    margin-top: 1rem;
+  }
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
   margin-top: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .no-results {
-    grid-column: 1 / -1; // Займає всю ширину сітки
-    text-align: center;
-    color: #777;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: 2rem;
+
+  mat-icon {
+    font-size: 80px;
+    width: 80px;
+    height: 80px;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #666;
+    font-size: 1rem;
+    margin: 0.5rem 0;
+
+    button {
+      color: #7c3aed;
+      text-transform: none;
+      padding: 0;
+      min-width: auto;
+    }
+  }
+}
+
+.events-count {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #555;
+  font-size: 0.95rem;
+
+  strong {
+    color: #7c3aed;
+    font-weight: 600;
     font-size: 1.1rem;
-    margin-top: 2rem;
+  }
 }

@@ -32,14 +32,14 @@ mat-card-header {
 
 mat-form-field {
   width: 100%;
-  margin-bottom: 1rem; // Більший відступ між полями
+  margin-bottom: 1rem; 
 }
 
 .visibility-group {
   margin: 1.5rem 0;
 
   .visibility-label {
-    display: block; // Заголовок на новому рядку
+    display: block; 
     font-weight: 500;
     margin-bottom: 0.75rem;
     color: #333;
@@ -47,29 +47,29 @@ mat-form-field {
 
   mat-radio-group {
     display: flex;
-    flex-direction: column; // Розміщуємо радіо-кнопки вертикально
+    flex-direction: column; 
     gap: 0.75rem;
   }
 }
 
 .form-actions {
   display: flex;
-  justify-content: flex-end; // Кнопки праворуч
+  justify-content: flex-end; 
   gap: 1rem;
   margin-top: 2rem;
 
   button {
-    padding: 0.75rem 1.5rem; // Розмір кнопок
+    padding: 0.75rem 1.5rem; 
     font-size: 1rem;
   }
 }
 
 .date-time-row {
   display: flex;
-  gap: 1rem; // Відстань між полями
+  gap: 1rem;
 
   mat-form-field {
-    flex: 1; // Кожне поле займає однакову ширину
+    flex: 1;
   }
 }
 
@@ -78,13 +78,13 @@ mat-form-field {
   justify-content: center;
   align-items: center;
   padding-top: 50px;
-  min-height: 300px; // Ensure spinner is visible
+  min-height: 300px; 
 }
 
 .form-level-error {
-    color: #f44336; // Material error color
+    color: #f44336; 
     font-size: 0.75em;
-    margin-top: -0.5rem; // Adjust spacing
+    margin-top: -0.5rem; 
     margin-bottom: 1rem;
-    display: block; // Ensure it takes space
+    display: block; 
 }
