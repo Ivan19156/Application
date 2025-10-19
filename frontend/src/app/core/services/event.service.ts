@@ -1,9 +1,52 @@
-import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import * as moment from 'moment'; // Assuming you're using moment for date objects from MatDatepicker
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, throwError, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
-// --- Interfaces ---
+interface EventSummaryDto {
+  id: string;
+  name: string;
+  description: string;
+  dateTime: string;
+  location: string;
+  capacity: number | null;
+  participantCount: number;
+}
+
+interface EventDetailsDto {
+  id: string;
+  name: string;
+  description: string;
+  dateTime: string;
+  location: string;
+  capacity: number | null;
+  visibility: string;
+  organizerId: string;
+  organizerName: string;
+  participantNames: string[];
+  participantCount: number;
+}
+
+export interface CreateEventDto {
+  title: string;
+  description: string;
+  date: Date | null;
+  time: string | null;
+  location: string;
+  capacity: number | null;
+  visibility: string;
+}
+
+export interface UpdateEventDto {
+  title?: string;
+  description?: string;
+  date?: Date | null;
+  time?: string | null;
+  location?: string;
+  capacity?: number | null;
+  visibility?: string;
+}
 
 export interface Event {
   id: string;
@@ -11,206 +54,215 @@ export interface Event {
   description: string;
   date: Date;
   location: string;
-  capacity: number | null; // Allow null for unlimited
+  capacity: number | null;
   participants: number;
   participantNames: string[];
   visibility: 'Public' | 'Private';
-  organizerId: string; // To identify who can edit/delete
+  organizerId: string;
 }
 
-export interface CreateEventDto {
-  title: string;
-  description: string;
-  date: moment.Moment; // Expecting Moment object from MatDatepicker
-  time: string; // Expecting "HH:mm" string from Timepicker
-  location: string;
-  capacity: number | null;
-  visibility: 'Public' | 'Private';
+export interface PaginatedEvents {
+  events: Event[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
-// --- Service ---
 
 @Injectable({
   providedIn: 'root'
 })
 export class EventService {
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/events`;
 
-  // --- Mock Data ---
-
-  private mockEvents: Event[] = [
-    // Your existing mock events array...
-   {
-      id: '1', name: 'Angular Conference 2025', description: '...', date: new Date(2025, 10, 5, 9, 0), location: 'Kyiv, Ukraine', capacity: 500, participants: 3, // Update count
-      participantNames: ['Alice', 'Bob', 'Charlie'], // <-- ADD NAMES
-      visibility: 'Public', organizerId: 'user1'
-    },
-    {
-      id: '2', name: '.NET Developers Meetup', description: '...', date: new Date(2025, 10, 12, 18, 30), location: 'Lviv, Ukraine', capacity: 50, participants: 2, // Update count
-      participantNames: ['David', 'Eve'], // <-- ADD NAMES
-      visibility: 'Public', organizerId: 'user1'
-    },
-    {
-      id: '3', name: 'Frontend Workshop', description: '...', date: new Date(2025, 10, 17, 10, 0), location: 'Online', capacity: 100, participants: 1, // Update count
-      participantNames: ['Frank'], // <-- ADD NAMES
-      visibility: 'Public', organizerId: 'user2'
-    },
-    // ... Add participantNames to other events or leave them empty [] ...
-     {
-      id: '4', name: 'Tech Talks: AI & ML', description: '...', date: new Date(2025, 10, 20, 14, 0), location: 'Kyiv, Podil', capacity: 200, participants: 0,
-      participantNames: [], visibility: 'Public', organizerId: 'user2'
-    },
-    {
-      id: '5', name: 'Morning Yoga Session', description: '...', date: new Date(2025, 10, 20, 7, 0), location: 'Central Park', capacity: 30, participants: 0,
-      participantNames: [], visibility: 'Public', organizerId: 'user3'
+  getEvents(searchTerm: string, page: number, pageSize: number): Observable<PaginatedEvents> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+      
+    if (searchTerm) {
+      params = params.set('search', searchTerm);
     }
-    
-  ];
 
-  constructor() {
-    console.log('📅 EventService initialized with events:', this.mockEvents.length);
+    return this.http.get<any>(this.apiUrl, { params }).pipe(
+      map(response => ({
+        ...response,
+        events: response.events.map((dto: EventSummaryDto) => this.mapSummaryToEvent(dto)),
+      })),
+      catchError(this.handleError)
+    );
   }
 
-  // --- Read Operations ---
-
-  // Get all public events
-  getEvents(): Observable<Event[]> { // Без searchTerm
-  console.log('🔍 getEvents called (simple version)');
-  const publicEvents = this.mockEvents.filter(e => e.visibility === 'Public');
-  return of(publicEvents).pipe(delay(300));
-}
-
-  // Get a single event by its ID
   getEventById(id: string): Observable<Event | undefined> {
-    console.log(`🔍 getEventById called for ID: ${id}`);
-    const event = this.mockEvents.find(e => e.id === id);
-    return of(event).pipe(delay(300));
+    return this.http.get<EventDetailsDto>(`${this.apiUrl}/${id}`).pipe(
+      map(dto => this.mapDetailsToEvent(dto)),
+      catchError(error => {
+        if (error.status === 404) return of(undefined);
+        return this.handleError(error);
+      })
+    );
   }
 
-  // Get events for the current user (for the calendar)
   getMyEvents(): Observable<Event[]> {
-    console.log('🔍 getMyEvents called');
-    // In a real app, filter by userId
-    return of(this.mockEvents).pipe(delay(300));
+    return this.http.get<EventSummaryDto[]>(`${environment.apiUrl}/users/me/events`).pipe(
+      map(dtos => dtos.map(dto => this.mapSummaryToEvent(dto))),
+      catchError(this.handleError)
+    );
   }
 
-  // --- Write Operations ---
-
-  // Create a new event
   createEvent(dto: CreateEventDto): Observable<Event> {
-    console.log('➕ createEvent called with DTO:', dto);
-    const eventDateTime = this.combineDateTime(dto.date, dto.time);
-    const newId = (this.mockEvents.length + 1).toString();
-
-    const newEvent: Event = {
-      id: newId,
-      name: dto.title,
-      description: dto.description || '',
-      date: eventDateTime,
-      location: dto.location,
-      capacity: dto.capacity === null || dto.capacity === undefined ? null : Number(dto.capacity), // Ensure null if empty, otherwise number
-      participants: 0,
-      participantNames: [],
-      visibility: dto.visibility,
-      organizerId: 'current-user' // Replace with actual user ID
-    };
-
-    this.mockEvents.push(newEvent);
-    console.log('✅ Event created:', newEvent);
-
-    return of(newEvent).pipe(delay(500));
+    const payload = this.prepareCreatePayload(dto);
+    return this.http.post<EventDetailsDto>(this.apiUrl, payload).pipe(
+      map(resDto => this.mapDetailsToEvent(resDto)),
+      catchError(this.handleError)
+    );
   }
 
-  // Update an existing event
-  updateEvent(id: string, dto: Partial<CreateEventDto>): Observable<Event | null> {
-    console.log(`✏️ updateEvent called for ID: ${id} with DTO:`, dto);
-    const eventIndex = this.mockEvents.findIndex(e => e.id === id);
-
-    if (eventIndex === -1) {
-      console.error(`❌ Event with ID ${id} not found for update.`);
-      return of(null).pipe(delay(300));
-    }
-
-    const event = { ...this.mockEvents[eventIndex] }; // Create a copy to modify
-
-    if (dto.title !== undefined) event.name = dto.title;
-    if (dto.description !== undefined) event.description = dto.description;
-    if (dto.date && dto.time) {
-      event.date = this.combineDateTime(dto.date, dto.time);
-    }
-    if (dto.location !== undefined) event.location = dto.location;
-    if (dto.capacity !== undefined) event.capacity = dto.capacity === null ? null : Number(dto.capacity);
-    if (dto.visibility !== undefined) event.visibility = dto.visibility;
-
-    this.mockEvents[eventIndex] = event; // Update the array
-    console.log('✅ Event updated:', event);
-
-    return of(event).pipe(delay(500));
+  updateEvent(id: string, dto: UpdateEventDto): Observable<Event | null> {
+    const payload = this.prepareUpdatePayload(dto);
+    return this.http.patch<EventDetailsDto>(`${this.apiUrl}/${id}`, payload).pipe(
+      map(resDto => this.mapDetailsToEvent(resDto)),
+      catchError(error => {
+        if (error.status === 404) return of(null);
+        return this.handleError(error);
+      })
+    );
   }
 
-  // Delete an event
   deleteEvent(id: string): Observable<boolean> {
-    console.log(`🗑️ deleteEvent called for ID: ${id}`);
-    const eventIndex = this.mockEvents.findIndex(e => e.id === id);
-
-    if (eventIndex === -1) {
-      console.error(`❌ Event with ID ${id} not found for deletion.`);
-      return of(false).pipe(delay(300));
-    }
-
-    this.mockEvents.splice(eventIndex, 1);
-    console.log(`✅ Event with ID ${id} deleted.`);
-    return of(true).pipe(delay(300));
+    return this.http.delete(`${this.apiUrl}/${id}`, { observe: 'response' }).pipe(
+      map(response => response.status === 204),
+      catchError(() => of(false))
+    );
   }
-
-  // --- Participation Operations ---
 
   joinEvent(eventId: string): Observable<{ success: boolean; message?: string }> {
-    console.log(`➕ Joining event ${eventId}`);
-    const event = this.mockEvents.find(e => e.id === eventId);
-    if (!event) {
-      return throwError(() => ({ success: false, message: 'Event not found' })).pipe(delay(300));
-    }
-    if (event.capacity !== null && event.participants >= event.capacity) {
-      return throwError(() => ({ success: false, message: 'Event is full' })).pipe(delay(300));
-    }
-
-    event.participants++;
-    console.log(`✅ Event ${eventId} participants updated to ${event.participants}`);
-    return of({ success: true }).pipe(delay(500));
+    return this.http.post<{ message: string }>(`${this.apiUrl}/${eventId}/join`, {}).pipe(
+      map(response => ({ success: true, message: response.message })),
+      catchError(this.handleError)
+    );
   }
 
   leaveEvent(eventId: string): Observable<{ success: boolean; message?: string }> {
-    console.log(`➖ Leaving event ${eventId}`);
-    const event = this.mockEvents.find(e => e.id === eventId);
-    if (!event) {
-      return throwError(() => ({ success: false, message: 'Event not found' })).pipe(delay(300));
-    }
-    // Assuming a user can only leave if they are a participant (check needed in real app)
-    if (event.participants > 0) {
-      event.participants--;
-      console.log(`✅ Event ${eventId} participants updated to ${event.participants}`);
-      return of({ success: true }).pipe(delay(500));
-    } else {
-      // Should not happen if logic is correct, but handle defensively
-      return throwError(() => ({ success: false, message: 'Cannot leave event with 0 participants' })).pipe(delay(300));
-    }
+    return this.http.post<{ message: string }>(`${this.apiUrl}/${eventId}/leave`, {}).pipe(
+      map(response => ({ success: true, message: response.message })),
+      catchError(this.handleError)
+    );
   }
 
-  // --- Helper Methods ---
+  private mapSummaryToEvent(dto: EventSummaryDto): Event {
+    return {
+      id: dto.id,
+      name: dto.name,
+      description: dto.description,
+      date: new Date(dto.dateTime),
+      location: dto.location,
+      capacity: dto.capacity,
+      participants: dto.participantCount,
+      participantNames: [],
+      visibility: 'Public',
+      organizerId: ''
+    };
+  }
 
-  private combineDateTime(date: moment.Moment, time: string): Date {
+  private mapDetailsToEvent(dto: EventDetailsDto): Event {
+    return {
+      id: dto.id,
+      name: dto.name,
+      description: dto.description,
+      date: new Date(dto.dateTime),
+      location: dto.location,
+      capacity: dto.capacity,
+      participants: dto.participantCount,
+      participantNames: dto.participantNames,
+      visibility: dto.visibility as 'Public' | 'Private',
+      organizerId: dto.organizerId
+    };
+  }
+  
+  private prepareCreatePayload(dto: CreateEventDto): object {
+    const dateTime = this.combineDateTime(dto.date, dto.time);
+    return {
+      title: dto.title,
+      description: dto.description,
+      date: dateTime.toISOString(),
+      location: dto.location,
+      capacity: dto.capacity,
+      visibility: dto.visibility
+    };
+  }
+
+  private prepareUpdatePayload(dto: UpdateEventDto): object {
+    const payload: any = {};
+    if (dto.title !== undefined) payload.title = dto.title;
+    if (dto.description !== undefined) payload.description = dto.description;
+    if (dto.location !== undefined) payload.location = dto.location;
+    if (dto.capacity !== undefined) payload.capacity = dto.capacity;
+    if (dto.visibility !== undefined) payload.visibility = dto.visibility;
+    if (dto.date && dto.time) {
+      payload.date = this.combineDateTime(dto.date, dto.time).toISOString();
+    }
+    return payload;
+  }
+
+  private combineDateTime(date: Date | null, time: string | null): Date {
     if (!date || !time) {
-      // Handle cases where date or time might be missing
-      console.error("Cannot combine date and time: one is missing.");
-      return new Date(); // Or throw an error
+      console.error('Invalid date or time provided for combination', { date, time });
+      throw new Error('Invalid date or time provided');
     }
+    
+    let hours: number;
+    let minutes: number;
+    const timeTrimmed = time.trim().toUpperCase();
+
     try {
-      const [hours, minutes] = time.split(':').map(Number);
-      // Clone the moment object before modifying it
-      return date.clone().hour(hours).minute(minutes).second(0).millisecond(0).toDate();
-    } catch (error) {
-      console.error("Error combining date and time:", error, { date, time });
-      return new Date(); // Fallback to current date or handle error appropriately
+      if (timeTrimmed.includes('AM') || timeTrimmed.includes('PM')) {
+        const parts = timeTrimmed.replace('AM', ' AM').replace('PM', ' PM').split(/[\s:]+/);
+        hours = parseInt(parts[0], 10);
+        minutes = parseInt(parts[1], 10);
+        const meridiem = parts[2];
+
+        if (meridiem === 'PM' && hours < 12) {
+          hours += 12;
+        } else if (meridiem === 'AM' && hours === 12) {
+          hours = 0;
+        }
+      } else {
+        const [hourStr, minuteStr] = timeTrimmed.split(':');
+        hours = parseInt(hourStr, 10);
+        minutes = parseInt(minuteStr, 10);
+      }
+
+      if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+          throw new Error('Parsed time is invalid');
+      }
+    } catch (e) {
+      console.error('Failed to parse time string:', time, e);
+      throw new Error('Invalid time format');
     }
+
+    const combined = new Date(date);
+    combined.setHours(hours, minutes, 0, 0);
+
+    if (isNaN(combined.getTime())) {
+      console.error('Failed to create a valid date from:', { date, time });
+      throw new Error('Invalid date/time combination');
+    }
+    
+    console.log(`✅ Combined date and time: ${combined.toISOString()}`);
+    return combined;
+  }
+
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    console.error('❌ API Error:', error);
+    let errorMessage = 'An unknown error occurred.';
+    if (error.error?.message) { errorMessage = error.error.message; }
+    else if (error.status === 0) { errorMessage = 'Could not connect to the server.'; }
+    return throwError(() => ({ message: errorMessage, status: error.status }));
   }
 }
+

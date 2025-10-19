@@ -1,19 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-// 1. Імпортуємо правильний клас
 import { RegisterComponent } from './register.component';
 
-describe('RegisterComponent', () => { // <-- 2. Оновлюємо назву
-  let component: RegisterComponent; // <-- 3. Змінюємо тип
-  let fixture: ComponentFixture<RegisterComponent>; // <-- 4. Змінюємо тип
+describe('RegisterComponent', () => { 
+  let component: RegisterComponent;
+  let fixture: ComponentFixture<RegisterComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RegisterComponent] // <-- 5. Використовуємо правильний клас
+      imports: [RegisterComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RegisterComponent); // <-- 6. І тут теж
+    fixture = TestBed.createComponent(RegisterComponent); 
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

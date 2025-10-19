@@ -4,8 +4,6 @@
 </div>
 
 <div *ngIf="!isLoading" class="calendar-container">
-
-  <!-- Header -->
   <div class="calendar-header">
     <h1 class="calendar-title">My Events</h1>
     <div class="view-toggles">
@@ -26,17 +24,16 @@
     </div>
   </div>
 
-  <!-- Calendar Navigation -->
+ 
   <div class="calendar-navigation">
-    <button mat-icon-button (click)="previousMonth()">
+    <button mat-icon-button (click)="previous()">
       <mat-icon>chevron_left</mat-icon>
     </button>
     
     <h2 class="current-month">
-      {{ viewDate | date: 'MMMM yyyy' }}
+      {{ getNavigationLabel() }}
     </h2>
-    
-    <button mat-icon-button (click)="nextMonth()">
+    <button mat-icon-button (click)="next()">
       <mat-icon>chevron_right</mat-icon>
     </button>
     
@@ -44,19 +41,13 @@
       Today
     </button>
   </div>
-
-  <!-- Calendar Views -->
   <div [ngSwitch]="view" class="calendar-wrapper">
-    
-    <!-- Month View -->
     <mwl-calendar-month-view
       *ngSwitchCase="CalendarView.Month"
       [viewDate]="viewDate"
       [events]="events"
       (eventClicked)="eventClicked($event)">
     </mwl-calendar-month-view>
-
-    <!-- Week View -->
     <mwl-calendar-week-view
       *ngSwitchCase="CalendarView.Week"
       [viewDate]="viewDate"
@@ -64,8 +55,6 @@
       (eventClicked)="eventClicked($event)">
     </mwl-calendar-week-view>
   </div>
-
-  <!-- No Events Message -->
   <div *ngIf="events.length === 0" class="no-events-message">
     <mat-icon>event_busy</mat-icon>
     <p>You are not part of any events yet.</p>
@@ -75,8 +64,6 @@
       Browse Events
     </button>
   </div>
-
-  <!-- Events Count -->
   <div *ngIf="events.length > 0" class="events-count">
     Total events: <strong>{{ events.length }}</strong>
   </div>

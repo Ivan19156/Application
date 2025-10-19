@@ -15,8 +15,8 @@
           <mat-form-field appearance="outline">
             <mat-label>Event Title</mat-label>
             <input matInput formControlName="title" placeholder="e.g., Tech Conference 2025">
-             <mat-error *ngIf="hasError('title', 'required')">Title is required.</mat-error>
-             <mat-error *ngIf="hasError('title', 'minlength')">Title is too short.</mat-error>
+            <mat-error *ngIf="hasError('title', 'required')">Title is required.</mat-error>
+            <mat-error *ngIf="hasError('title', 'minlength')">Title is too short.</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -38,22 +38,23 @@
               <mat-icon matIconSuffix (click)="timePicker.open()">watch_later</mat-icon>
               <mat-error *ngIf="hasError('time', 'required')">Time is required.</mat-error>
             </mat-form-field>
-            <ngx-material-timepicker #timePicker></ngx-material-timepicker>
+            <!-- 👇 THE FIX IS HERE 👇 -->
+            <ngx-material-timepicker #timePicker [format]="24"></ngx-material-timepicker>
           </div>
-           <mat-error *ngIf="formHasDateError" class="form-level-error">
-                Event date and time cannot be in the past.
-           </mat-error>
+          <mat-error *ngIf="formHasDateError" class="form-level-error">
+            Event date and time cannot be in the past.
+          </mat-error>
 
           <mat-form-field appearance="outline">
             <mat-label>Location</mat-label>
             <input matInput formControlName="location" placeholder="e.g., Convention Center, San Francisco">
-             <mat-error *ngIf="hasError('location', 'required')">Location is required.</mat-error>
+            <mat-error *ngIf="hasError('location', 'required')">Location is required.</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Capacity (optional)</mat-label>
             <input matInput formControlName="capacity" type="number" placeholder="Leave empty for unlimited">
-             <mat-error *ngIf="hasError('capacity', 'min')">Capacity must be at least 1.</mat-error>
+            <mat-error *ngIf="hasError('capacity', 'min')">Capacity must be at least 1.</mat-error>
           </mat-form-field>
 
           <div class="visibility-group">
@@ -68,7 +69,8 @@
             <button type="button" mat-button (click)="onCancel()">Cancel</button>
             <button mat-raised-button color="primary" type="submit" [disabled]="eventForm.invalid || vm.isSaving">
               <span *ngIf="!vm.isSaving">Create Event</span>
-              <span *ngIf="vm.isSaving">Creating...</span> </button>
+              <span *ngIf="vm.isSaving">Creating...</span>
+            </button>
           </mat-card-actions>
         </form>
       </mat-card-content>

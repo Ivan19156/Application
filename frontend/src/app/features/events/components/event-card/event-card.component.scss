@@ -1,4 +1,3 @@
-// Змушуємо картку займати всю доступну висоту в сітці
 :host {
   display: flex;
   height: 100%;
@@ -6,10 +5,10 @@
 
 .event-card {
   display: flex;
-  flex-direction: column; // Розміщуємо контент і кнопку вертикально
+  flex-direction: column; 
   width: 100%;
   border: 1px solid #e0e0e0;
-  border-radius: 8px !important; // Важливо для перезапису стилів Material
+  border-radius: 8px !important; 
   box-shadow: none !important;
   transition: box-shadow 0.3s ease;
 
@@ -18,8 +17,6 @@
   }
 }
 
-// flex-grow змушує блок з контентом розтягуватися,
-// притискаючи кнопку до низу
 .flex-grow {
   flex-grow: 1;
 }
@@ -28,7 +25,7 @@
   border-top: 1px solid #eee;
   padding-top: 1rem;
   display: grid;
-  grid-template-columns: 1fr 1fr; // Дві колонки для мета-даних
+  grid-template-columns: 1fr 1fr; 
   gap: 0.75rem;
 }
 
@@ -47,40 +44,39 @@
 }
 
 .join-btn {
-  background-color: #28a745; // Зелений колір
+  background-color: #28a745; 
   color: white;
-  padding: 1.25rem 0 !important; // Робимо кнопку вищою
+  padding: 1.25rem 0 !important; 
   font-size: 1rem !important;
 }
 
 .event-card-link {
   text-decoration: none;
-  color: inherit; // Успадковуємо колір тексту
-  display: block; // Важливо для правильного відображення
+  color: inherit; 
+  display: block; 
   height: 100%;
 }
-// ... (існуючі стилі) ...
+
 
 .join-btn {
-  background-color: #28a745 !important; // Зелений
+  background-color: #28a745 !important; 
   color: white !important;
 }
 
 .leave-btn {
-  color: #dc3545 !important; // Червоний (warn колір Material)
+  color: #dc3545 !important; 
   border-color: #dc3545 !important;
 }
 
 .full-btn {
-  background-color: #e9ecef !important; // Сірий фон для неактивної
-  color: #6c757d !important; // Сірий текст
+  background-color: #e9ecef !important; 
+  color: #6c757d !important; 
 }
 
-// Загальні стилі для кнопок в картці
 mat-card-actions button {
   padding: 1rem 0 !important;
   font-size: 1rem !important;
-  display: flex; // Для іконки та тексту
+  display: flex; 
   align-items: center;
   justify-content: center;
   gap: 8px;
