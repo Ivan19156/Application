@@ -23,7 +23,7 @@
 
 # Docker files to ignore in builds
 **/.dockerignore
-**/Dockerfile
+
 
 # Node modules
 **/node_modules
