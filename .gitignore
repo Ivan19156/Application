@@ -1,18 +1,26 @@
-# Environment file with secrets
+# Environment variables (secrets)
 .env
+.env.*
+*.env
 
-# User secrets file (managed by dotnet CLI, usually outside repo)
+# User secrets (managed by dotnet CLI)
 **/secrets.json
 
-# Local development settings files that might contain secrets
+# Local development settings
 **/appsettings.Development.json
+**/appsettings.*.json
+!**/appsettings.json
+!**/appsettings.Production.json
 
 # Build output
 [Bb]in/
 [Oo]bj/
+[Oo]ut/
 
-# IDE files & user-specific files
+# IDE files
 .vs/
+.vscode/
+.idea/
 *.suo
 *.user
 *.*proj.user
@@ -21,13 +29,25 @@
 **/.settings
 **/.toolstarget
 
-# Docker helper files to ignore
-**/.dockerignore
-
 # Node modules
-**/node_modules
+**/node_modules/
 **/npm-debug.log
+**/.npm
+**/package-lock.json
 
-# Other
-LICENSE
-README.md
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Test results
+TestResults/
+*.trx
