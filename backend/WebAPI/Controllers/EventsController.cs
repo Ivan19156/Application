@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Application.Interfaces.Services; // Use IEventService
-using Contracts.DTOs.Events;         // Use DTOs from Contracts
+using Application.Interfaces.Services; 
+using Contracts.DTOs.Events;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -10,44 +10,41 @@ using System.Collections.Generic;
 namespace WebAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // Base route /api/events
+[Route("api/[controller]")] 
 public class EventsController : ControllerBase
 {
-    private readonly IEventService _eventService; // Inject the service interface
-
+    private readonly IEventService _eventService;
     public EventsController(IEventService eventService)
     {
         _eventService = eventService;
     }
 
-    // --- Helper Method to Get Current User ID ---
     private Guid GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier); // Standard claim type for ID
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier); 
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            // Should not happen if [Authorize] works, but good practice to check
             throw new UnauthorizedAccessException("User ID claim not found or invalid in token.");
         }
         return userId;
     }
 
-    // --- Public Endpoint ---
-
-    // GET /api/events - Fetch public events
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<EventSummaryDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPublicEvents()
+    [ProducesResponseType(typeof(PaginatedEventsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPublicEvents(
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 12)
     {
-        var events = await _eventService.GetPublicEventsAsync();
-        return Ok(events); // Service already returns the correct DTO
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 12;
+
+        var result = await _eventService.GetPublicEventsAsync(search, page, pageSize);
+        return Ok(result);
     }
 
-    // --- Protected Endpoints ---
-
-    // GET /api/events/{id} - Fetch single event details
     [HttpGet("{id:guid}")]
-    [Authorize] // Require authentication to view details
+    [Authorize]
     [ProducesResponseType(typeof(EventDetailsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -57,13 +54,11 @@ public class EventsController : ControllerBase
 
         if (errorMessage != null)
         {
-            // Assuming "Event not found." corresponds to 404
             return NotFound(new { Message = errorMessage });
         }
         return Ok(eventDto);
     }
 
-    // POST /api/events - Create new event
     [HttpPost]
     [Authorize]
     [ProducesResponseType(typeof(EventDetailsDto), StatusCodes.Status201Created)]
@@ -78,17 +73,14 @@ public class EventsController : ControllerBase
         {
             return BadRequest(new { Message = errorMessage });
         }
-        if (createdEventDto == null) // Defensive check
+        if (createdEventDto == null)
         {
              return BadRequest(new { Message = "Failed to create event for an unknown reason." });
         }
 
-
-        // Return 201 Created with location and the created event details DTO
         return CreatedAtAction(nameof(GetEventById), new { id = createdEventDto.Id }, createdEventDto);
     }
 
-    // PATCH /api/events/{id} - Edit event
     [HttpPatch("{id:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(EventDetailsDto), StatusCodes.Status200OK)]
@@ -110,7 +102,6 @@ public class EventsController : ControllerBase
         return Ok(updatedEventDto);
     }
 
-    // DELETE /api/events/{id} - Delete event
     [HttpDelete("{id:guid}")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -128,15 +119,14 @@ public class EventsController : ControllerBase
             {
                  if (errorMessage.StartsWith("Forbidden")) return Forbid();
                  if (errorMessage.EndsWith("not found.")) return NotFound(new { Message = errorMessage });
-                 return BadRequest(new { Message = errorMessage }); // Should ideally not happen if checks are right
+                 return BadRequest(new { Message = errorMessage });
             }
-             return BadRequest(new { Message = "Failed to delete event." }); // Generic fallback
+             return BadRequest(new { Message = "Failed to delete event." });
         }
 
-        return NoContent(); // Success
+        return NoContent();
     }
 
-    // POST /api/events/{id}/join - Join event
     [HttpPost("{id:guid}/join")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -153,7 +143,6 @@ public class EventsController : ControllerBase
             if (errorMessage != null)
             {
                  if (errorMessage.EndsWith("not found.")) return NotFound(new { Message = errorMessage });
-                 // Other errors like "Already participating" or "Event is full" are Bad Request
                  return BadRequest(new { Message = errorMessage });
             }
              return BadRequest(new { Message = "Failed to join event." });
@@ -162,13 +151,12 @@ public class EventsController : ControllerBase
         return Ok(new { Message = "Successfully joined the event." });
     }
 
-    // POST /api/events/{id}/leave - Leave event
     [HttpPost("{id:guid}/leave")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)] // Event might not exist
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> LeaveEvent(Guid id)
     {
         var userId = GetCurrentUserId();
@@ -178,9 +166,7 @@ public class EventsController : ControllerBase
         {
              if (errorMessage != null)
              {
-                 // Check for event not found specifically if repository/service distinguishes it
-                 // if (errorMessage.EndsWith("not found.")) return NotFound(new { Message = errorMessage });
-                 return BadRequest(new { Message = errorMessage }); // e.g., "Not participating"
+                 return BadRequest(new { Message = errorMessage });
              }
               return BadRequest(new { Message = "Failed to leave event." });
         }
@@ -188,8 +174,7 @@ public class EventsController : ControllerBase
         return Ok(new { Message = "Successfully left the event." });
     }
 
-    // GET /api/users/me/events - Fetch user's events (calendar)
-    [HttpGet("/api/users/me/events")] // Explicit route override
+    [HttpGet("/api/users/me/events")]
     [Authorize]
     [ProducesResponseType(typeof(IEnumerable<EventSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

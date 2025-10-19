@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Contracts.DTOs.Events; // Use DTOs from Contracts project
+using Contracts.DTOs.Events; 
 
 namespace Application.Interfaces.Services;
 
 public interface IEventService
 {
-    Task<IEnumerable<EventSummaryDto>> GetPublicEventsAsync();
-    Task<(EventDetailsDto? Event, string? ErrorMessage)> GetEventDetailsByIdAsync(Guid id);
+    Task<PaginatedEventsDto> GetPublicEventsAsync(string? searchTerm = null, int page = 1, int pageSize = 12);
+     Task<(EventDetailsDto? Event, string? ErrorMessage)> GetEventDetailsByIdAsync(Guid id);
     Task<IEnumerable<EventSummaryDto>> GetMyEventsAsync(Guid userId);
     Task<(EventDetailsDto? CreatedEvent, string? ErrorMessage)> CreateEventAsync(CreateEventDto createDto, Guid organizerId);
     Task<(EventDetailsDto? UpdatedEvent, string? ErrorMessage)> UpdateEventAsync(Guid eventId, UpdateEventDto updateDto, Guid userId);

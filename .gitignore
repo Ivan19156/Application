@@ -1,14 +1,35 @@
-# User secrets file (usually outside repo, but good practice)
+# Environment file with secrets
+.env
+
+# User secrets file (managed by dotnet CLI, usually outside repo)
 **/secrets.json
 
-# Development settings that might contain secrets
+# Local development settings files that might contain secrets
 **/appsettings.Development.json
 
 # Build output
 [Bb]in/
 [Oo]bj/
 
-# IDE files
+# IDE files & user-specific files
 .vs/
 *.suo
 *.user
+*.*proj.user
+**/.classpath
+**/.project
+**/.settings
+**/.toolstarget
+
+# Docker files to ignore in builds
+**/.dockerignore
+**/docker-compose.yml
+**/Dockerfile
+
+# Node modules
+**/node_modules
+**/npm-debug.log
+
+# Other
+LICENSE
+README.md

@@ -23,7 +23,7 @@ public class ParticipantRepository : IParticipantRepository
             VALUES (@UserId, @EventId)
             ON CONFLICT ("UserId", "EventId") DO NOTHING; -- Ignore if already participating
             """;
-        // ON CONFLICT prevents errors if user tries to join multiple times
+       
 
         using var connection = _connectionProvider.CreateConnection();
         await connection.ExecuteAsync(sql, participant);
@@ -48,7 +48,6 @@ public class ParticipantRepository : IParticipantRepository
             );
             """;
         using var connection = _connectionProvider.CreateConnection();
-        // ExecuteScalarAsync<bool> is efficient for checking existence
         return await connection.ExecuteScalarAsync<bool>(sql, new { UserId = userId, EventId = eventId });
     }
 
@@ -60,5 +59,18 @@ public class ParticipantRepository : IParticipantRepository
             """;
         using var connection = _connectionProvider.CreateConnection();
         await connection.ExecuteAsync(sql, new { UserId = userId, EventId = eventId });
+    }
+
+    public async Task<IEnumerable<User>> GetParticipantsForEventAsync(Guid eventId)
+    {
+        const string sql = """
+            SELECT u."Id", u."Name", u."Email"
+            FROM "Participants" p
+            JOIN "Users" u ON p."UserId" = u."Id"
+            WHERE p."EventId" = @EventId;
+            """;
+        
+        using var connection = _connectionProvider.CreateConnection();
+        return await connection.QueryAsync<User>(sql, new { EventId = eventId });
     }
 }

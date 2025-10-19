@@ -6,12 +6,11 @@ import { MatButtonModule } from '@angular/material/button';
   selector: 'app-confirm-dialog',
   standalone: true,
   imports: [
-    MatDialogModule, // Needed for mat-dialog-title, content, actions
-    MatButtonModule  // Needed for mat-button, mat-flat-button
+    MatDialogModule, 
+    MatButtonModule  
   ],
   templateUrl: './confirm-dialog.component.html',
   styleUrl: './confirm-dialog.component.scss'
 })
 export class ConfirmDialogComponent {
-  // No specific logic needed for this simple dialog
 }

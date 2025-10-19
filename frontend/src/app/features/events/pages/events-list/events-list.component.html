@@ -1,20 +1,78 @@
-<div class="container mx-auto p-8">
-  <h1 class="text-4xl font-bold">Discover Events</h1>
-  <p class="text-gray-600 mt-2 mb-6">Find and join exciting events happening around you</p>
+<ng-container *ngIf="vm$ | async as vm">
+  <div class="container mx-auto p-8">
+    <div class="header-section">
+      <h1 class="text-4xl font-bold">Discover Events</h1>
+      <p class="text-gray-600 mt-2 mb-6">
+        Find and join exciting events happening near you
+      </p>
+    </div>
+    <div class="search-section">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix>search</mat-icon>
+        <input 
+          matInput 
+          placeholder="Search events by name..."
+          [formControl]="searchControl"
+          (keydown)="onSearchKeydown($event)">
+        <button 
+          *ngIf="searchControl.value" 
+          matSuffix 
+          mat-icon-button 
+          (click)="clearSearch()"
+          type="button">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        class="search-button"
+        (click)="onSearch()"
+        [disabled]="vm.isLoading">
+        <mat-icon>search</mat-icon>
+        <span>Search</span>
+      </button>
+    </div>
+    <div class="search-info" *ngIf="vm.searchTerm">
+      <p>
+        Showing results for: <strong>"{{ vm.searchTerm }}"</strong>
+        <button mat-button (click)="clearSearch()" class="clear-filter">
+          Clear filter
+        </button>
+      </p>
+    </div>
+    <div *ngIf="vm.isLoading" class="loading-spinner">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading events...</p>
+    </div>
+    <div *ngIf="!vm.isLoading && vm.hasError" class="error-message">
+      <mat-icon>error_outline</mat-icon>
+      <p>Could not load events. Please try again later.</p>
+      <button mat-raised-button color="primary" (click)="onSearch()">
+        Retry
+      </button>
+    </div>
+    <div *ngIf="!vm.isLoading && !vm.hasError" class="event-grid">
+      <app-event-card 
+        *ngFor="let event of vm.events" 
+        [event]="event">
+      </app-event-card>
+      <div *ngIf="vm.events.length === 0" class="no-results">
+        <mat-icon>event_busy</mat-icon>
+        <h3>No events found</h3>
+        <p *ngIf="vm.searchTerm">
+          Try adjusting your search term or 
+          <button mat-button (click)="clearSearch()">clear filters</button>
+        </p>
+        <p *ngIf="!vm.searchTerm">
+          There are no public events available at the moment.
+        </p>
+      </div>
+    </div>
+    <div *ngIf="!vm.isLoading && vm.events.length > 0" class="events-count">
+      Found <strong>{{ vm.events.length }}</strong> 
+      {{ vm.events.length === 1 ? 'event' : 'events' }}
+    </div>
 
-  <mat-form-field appearance="outline" class="w-full search-bar">
-    <mat-icon matPrefix>search</mat-icon>
-    <input matInput placeholder="Search events by name...">
-  </mat-form-field>
-
-  <div *ngIf="!(events$ | async)" class="loading-spinner">
-     <mat-spinner diameter="50"></mat-spinner>
   </div>
-
-  <div class="event-grid mt-8">
-    <app-event-card *ngFor="let event of events$ | async" [event]="event"></app-event-card>
-    <p *ngIf="(events$ | async)?.length === 0" class="no-results">
-      No events found.
-    </p>
-  </div>
-</div>
+</ng-container>

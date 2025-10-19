@@ -4,7 +4,8 @@ using Dapper;
 using Infrastructure.Data;
 using System;
 using System.Collections.Generic;
-using System.Linq; // Required for mapping related data if needed
+using System.Linq; 
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Persistence.Repositories;
@@ -34,7 +35,7 @@ public class EventRepository : IEventRepository
             newEvent.DateTime,
             newEvent.Location,
             newEvent.Capacity,
-            // Map the enum to its integer representation for the DB
+            
             Visibility = (short)newEvent.Visibility,
             newEvent.OrganizerId
         });
@@ -52,8 +53,6 @@ public class EventRepository : IEventRepository
 
     public async Task<Event?> GetEventByIdAsync(Guid id)
     {
-        // Simple query for event details.
-        // To include organizer/participant info, more complex queries or multiple queries are needed.
         const string sql = """
             SELECT "Id", "Name", "Description", "DateTime", "Location", "Capacity", "Visibility", "OrganizerId"
             FROM "Events"
@@ -61,43 +60,87 @@ public class EventRepository : IEventRepository
             """;
 
         using var connection = _connectionProvider.CreateConnection();
-        // Dapper maps the SMALLINT 'Visibility' back to the enum automatically
+        
         return await connection.QueryFirstOrDefaultAsync<Event>(sql, new { Id = id });
-
-        // --- Example: Query with Organizer Name (requires JOIN) ---
-        /*
-        const string sqlWithOrganizer = """
-            SELECT
-                e."Id", e."Name", e."Description", e."DateTime", e."Location", e."Capacity", e."Visibility", e."OrganizerId",
-                o."Name" AS OrganizerName -- Select organizer name
-            FROM "Events" e
-            JOIN "Users" o ON e."OrganizerId" = o."Id"
-            WHERE e."Id" = @Id;
-            """;
-        // To map this, you'd need a custom mapping or a DTO that includes OrganizerName
-        // var result = await connection.QueryFirstOrDefaultAsync<YourEventWithOrganizerDto>(sqlWithOrganizer, new { Id = id });
-        // return MapDtoToEvent(result); // You'd need a mapping function
-        */
     }
 
+public async Task<int> GetPublicEventsCountAsync(string? searchTerm = null)
+{
+    using var connection = _connectionProvider.CreateConnection();
 
-    public async Task<IEnumerable<Event>> GetPublicEventsAsync()
+    const string baseSql = """
+        SELECT COUNT(*)
+        FROM "Events"
+        WHERE "Visibility" = 0
+        """;
+
+    if (string.IsNullOrWhiteSpace(searchTerm))
     {
-        // Query only public events (Visibility = 0)
+        return await connection.ExecuteScalarAsync<int>(baseSql);
+    }
+
+    const string searchSql = baseSql + """
+          AND (
+            "Name" ILIKE @SearchPattern
+            OR "Description" ILIKE @SearchPattern
+            OR "Location" ILIKE @SearchPattern
+          )
+        """;
+
+    return await connection.ExecuteScalarAsync<int>(
+        searchSql, 
+        new { SearchPattern = $"%{searchTerm}%" }
+    );
+}
+
+public async Task<IEnumerable<Event>> GetPublicEventsAsync(
+    string? searchTerm = null,
+    int page = 1,
+    int pageSize = 12)
+{
+    using var connection = _connectionProvider.CreateConnection();
+    var offset = (page - 1) * pageSize;
+
+    if (string.IsNullOrWhiteSpace(searchTerm))
+    {
         const string sql = """
             SELECT "Id", "Name", "Description", "DateTime", "Location", "Capacity", "Visibility", "OrganizerId"
             FROM "Events"
-            WHERE "Visibility" = 0 -- Assuming 0 maps to Public
-            ORDER BY "DateTime" ASC; -- Order by date
+            WHERE "Visibility" = 0
+            ORDER BY "DateTime" ASC
+            LIMIT @PageSize OFFSET @Offset;
             """;
 
-        using var connection = _connectionProvider.CreateConnection();
-        return await connection.QueryAsync<Event>(sql);
+        return await connection.QueryAsync<Event>(sql, new { PageSize = pageSize, Offset = offset });
     }
+    else
+    {
+        const string sql = """
+            SELECT "Id", "Name", "Description", "DateTime", "Location", "Capacity", "Visibility", "OrganizerId"
+            FROM "Events"
+            WHERE "Visibility" = 0
+              AND (
+                "Name" ILIKE @SearchPattern
+                OR "Description" ILIKE @SearchPattern
+                OR "Location" ILIKE @SearchPattern
+              )
+            ORDER BY "DateTime" ASC
+            LIMIT @PageSize OFFSET @Offset;
+            """;
+
+        return await connection.QueryAsync<Event>(
+            sql,
+            new { 
+                SearchPattern = $"%{searchTerm}%",
+                PageSize = pageSize,
+                Offset = offset
+            }
+        );
+    }
+}
 
     public async Task<IEnumerable<Event>> GetEventsForUserAsync(Guid userId)
     {
-        // Query events where the user is either the organizer OR a participant
         const string sql = """
             SELECT DISTINCT e."Id", e."Name", e."Description", e."DateTime", e."Location", e."Capacity", e."Visibility", e."OrganizerId"
             FROM "Events" e
@@ -105,7 +148,6 @@ public class EventRepository : IEventRepository
             WHERE e."OrganizerId" = @UserId OR p."UserId" = @UserId
             ORDER BY e."DateTime" ASC;
             """;
-        // DISTINCT prevents duplicates if user is both organizer and participant
 
         using var connection = _connectionProvider.CreateConnection();
         return await connection.QueryAsync<Event>(sql, new { UserId = userId });
@@ -123,7 +165,6 @@ public class EventRepository : IEventRepository
                 "Visibility" = @Visibility
             WHERE "Id" = @Id AND "OrganizerId" = @OrganizerId; -- Optional: Ensure only organizer can update
             """;
-            // Note: We don't usually update OrganizerId
 
         using var connection = _connectionProvider.CreateConnection();
         await connection.ExecuteAsync(sql, new
@@ -135,7 +176,7 @@ public class EventRepository : IEventRepository
             eventToUpdate.Location,
             eventToUpdate.Capacity,
             Visibility = (short)eventToUpdate.Visibility,
-            eventToUpdate.OrganizerId // Include OrganizerId if using the WHERE clause check
+            eventToUpdate.OrganizerId
         });
     }
 }

@@ -2,7 +2,6 @@ using System;
 
 namespace Contracts.DTOs.Auth;
 
-// Represents basic user info safe to send to the client
 public class UserDto
 {
     public Guid Id { get; set; }

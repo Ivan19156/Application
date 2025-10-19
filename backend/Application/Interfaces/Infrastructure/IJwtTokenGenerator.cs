@@ -1,4 +1,4 @@
-using Core.Entities; // We need User
+using Core.Entities; 
 
 namespace Application.Interfaces.Infrastructure;
 

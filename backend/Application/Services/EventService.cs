@@ -5,6 +5,7 @@ using Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Services;
@@ -13,7 +14,7 @@ public class EventService : IEventService
 {
     private readonly IEventRepository _eventRepository;
     private readonly IParticipantRepository _participantRepository;
-    private readonly IUserRepository _userRepository; // Needed for names
+    private readonly IUserRepository _userRepository; 
 
     public EventService(
         IEventRepository eventRepository,
@@ -25,30 +26,44 @@ public class EventService : IEventService
         _userRepository = userRepository;
     }
 
-    public async Task<IEnumerable<EventSummaryDto>> GetPublicEventsAsync()
+    
+public async Task<PaginatedEventsDto> GetPublicEventsAsync(
+    string? searchTerm = null, 
+    int page = 1, 
+    int pageSize = 12)
+{
+    
+    var totalCount = await _eventRepository.GetPublicEventsCountAsync(searchTerm);
+    
+    var events = await _eventRepository.GetPublicEventsAsync(searchTerm, page, pageSize);
+    
+    var eventDtos = new List<EventSummaryDto>();
+    foreach (var ev in events)
     {
-        var events = await _eventRepository.GetPublicEventsAsync();
-        var eventDtos = new List<EventSummaryDto>();
-
-        foreach (var ev in events)
+        var participantCount = await _participantRepository.GetParticipantCountAsync(ev.Id);
+        eventDtos.Add(new EventSummaryDto
         {
-            var participantCount = await _participantRepository.GetParticipantCountAsync(ev.Id);
-            // Simple mapping (consider AutoMapper)
-            eventDtos.Add(new EventSummaryDto
-            {
-                Id = ev.Id,
-                Name = ev.Name,
-                Description = TruncateDescription(ev.Description),
-                DateTime = ev.DateTime,
-                Location = ev.Location,
-                Capacity = ev.Capacity,
-                ParticipantCount = participantCount
-            });
-        }
-        return eventDtos;
+            Id = ev.Id,
+            Name = ev.Name,
+            Description = TruncateDescription(ev.Description),
+            DateTime = ev.DateTime,
+            Location = ev.Location,
+            Capacity = ev.Capacity,
+            ParticipantCount = participantCount
+        });
     }
 
-     public async Task<(EventDetailsDto? Event, string? ErrorMessage)> GetEventDetailsByIdAsync(Guid id)
+    return new PaginatedEventsDto
+    {
+        Events = eventDtos,
+        TotalCount = totalCount,
+        PageNumber = page,
+        PageSize = pageSize
+    };
+}
+
+
+public async Task<(EventDetailsDto? Event, string? ErrorMessage)> GetEventDetailsByIdAsync(Guid id)
     {
         var eventEntity = await _eventRepository.GetEventByIdAsync(id);
         if (eventEntity == null)
@@ -56,15 +71,11 @@ public class EventService : IEventService
             return (null, "Event not found.");
         }
 
-        // Fetch related data (replace mocks with real calls)
         var organizer = await _userRepository.GetUserByIdAsync(eventEntity.OrganizerId);
-        // TODO: Need repository method to get participant users/names by EventId
-        var participantNames = new List<string>(); // Placeholder
-        // var participantUserIds = await _participantRepository.GetParticipantUserIdsAsync(id);
-        // var participantUsers = await _userRepository.GetUsersByIdsAsync(participantUserIds);
-        // participantNames = participantUsers.Select(u => u.Name).ToList();
+        
+        var participants = await _participantRepository.GetParticipantsForEventAsync(id);
+        var participantNames = participants.Select(p => p.Name).ToList();
 
-        // Mapping (consider AutoMapper)
         var eventDto = new EventDetailsDto
         {
             Id = eventEntity.Id,
@@ -76,21 +87,20 @@ public class EventService : IEventService
             Visibility = eventEntity.Visibility.ToString(),
             OrganizerId = eventEntity.OrganizerId,
             OrganizerName = organizer?.Name ?? "N/A",
-            ParticipantNames = participantNames // Populate with real names
+            ParticipantNames = participantNames
         };
         return (eventDto, null);
     }
-
 
     public async Task<IEnumerable<EventSummaryDto>> GetMyEventsAsync(Guid userId)
     {
          var events = await _eventRepository.GetEventsForUserAsync(userId);
          var eventDtos = new List<EventSummaryDto>();
-         // Similar mapping as GetPublicEventsAsync
+         
          foreach (var ev in events)
          {
              var participantCount = await _participantRepository.GetParticipantCountAsync(ev.Id);
-             eventDtos.Add(new EventSummaryDto { /* ... map properties ... */ Id=ev.Id, Name=ev.Name, Description=TruncateDescription(ev.Description), DateTime=ev.DateTime, Location=ev.Location, Capacity=ev.Capacity, ParticipantCount=participantCount });
+             eventDtos.Add(new EventSummaryDto {  Id=ev.Id, Name=ev.Name, Description=TruncateDescription(ev.Description), DateTime=ev.DateTime, Location=ev.Location, Capacity=ev.Capacity, ParticipantCount=participantCount });
          }
          return eventDtos;
     }
@@ -102,7 +112,7 @@ public class EventService : IEventService
         {
             return (null, "Invalid visibility value.");
         }
-         // Basic validation (FluentValidation handles more)
+         
          if(createDto.Date <= DateTimeOffset.UtcNow)
          {
              return (null, "Event date must be in the future.");
@@ -123,9 +133,8 @@ public class EventService : IEventService
 
         await _eventRepository.AddEventAsync(newEvent);
 
-        // Fetch details of the created event to return
         var detailsResult = await GetEventDetailsByIdAsync(newEvent.Id);
-        return (detailsResult.Event, detailsResult.ErrorMessage); // Return the tuple directly
+        return (detailsResult.Event, detailsResult.ErrorMessage); 
     }
 
     public async Task<(EventDetailsDto? UpdatedEvent, string? ErrorMessage)> UpdateEventAsync(Guid eventId, UpdateEventDto updateDto, Guid userId)
@@ -141,7 +150,6 @@ public class EventService : IEventService
             return (null, "Forbidden: Only the organizer can edit the event.");
         }
 
-        // Apply updates
         bool updated = false;
         if (updateDto.Title != null) { existingEvent.Name = updateDto.Title; updated = true; }
         if (updateDto.Description != null) { existingEvent.Description = updateDto.Description; updated = true; }
@@ -171,7 +179,7 @@ public class EventService : IEventService
             await _eventRepository.UpdateEventAsync(existingEvent);
         }
 
-        // Fetch updated details
+        
         var detailsResult = await GetEventDetailsByIdAsync(eventId);
         return (detailsResult.Event, detailsResult.ErrorMessage);
     }
@@ -202,12 +210,7 @@ public class EventService : IEventService
          }
           if (eventToJoin.Visibility == EventVisibility.Private && eventToJoin.OrganizerId != userId)
          {
-              // Basic check for private event, real app might need invitation system
-              // Allow organizer to join their own private event? debatable.
-              // For now, assume only public can be joined freely.
-              // Or check if user is already a participant (if loading participants)
-              // Let's refine this later. For now, focus on public join.
-              // return (false, "Cannot join a private event without invitation.");
+              
          }
 
 
@@ -238,7 +241,7 @@ public class EventService : IEventService
          return (true, null);
     }
 
-    // Helper
+
     private string TruncateDescription(string description, int maxLength = 100)
     {
          if (string.IsNullOrEmpty(description) || description.Length <= maxLength)

@@ -1,148 +1,130 @@
-// import { Injectable, inject } from '@angular/core';
-// import { HttpClient } from '@angular/common/http';
-// import { Observable, of, throwError } from 'rxjs';
-// import { delay, tap } from 'rxjs/operators';
-
-// // Описуємо, які дані ми очікуємо від бекенду
-// export interface AuthResponse {
-//   token: string;
-//   user: {
-//     id: string;
-//     name: string;
-//     email: string;
-//   };
-// }
-
-// @Injectable({
-//   providedIn: 'root'
-// })
-// export class AuthService {
-//   private http = inject(HttpClient);
-
-//   // --- МЕТОД ДЛЯ ЛОГІНУ ---
-//   login(credentials: { email: string, password: string }): Observable<AuthResponse> {
-//     console.log('AuthService: Logging in with', credentials);
-
-//     // --- СИМУЛЯЦІЯ ВІДПОВІДІ ВІД СЕРВЕРА ---
-//     if (credentials.email === 'test@test.com' && credentials.password === 'password123') {
-//       // Якщо дані правильні, повертаємо фейкову успішну відповідь
-//       const mockSuccessResponse: AuthResponse = {
-//         token: 'fake-jwt-token-from-service-123',
-//         user: { id: '1', name: 'Test User', email: 'test@test.com' }
-//       };
-//       // of() створює Observable, delay(1000) імітує затримку мережі в 1 секунду
-//       return of(mockSuccessResponse).pipe(delay(1000));
-//     } else {
-//       // Якщо дані неправильні, повертаємо фейкову помилку
-//       const mockErrorResponse = { status: 401, message: 'Invalid credentials' };
-//       return throwError(() => mockErrorResponse).pipe(delay(1000));
-//     }
-//   }
-
-//   // --- МЕТОД ДЛЯ РЕЄСТРАЦІЇ (поки що просто заглушка) ---
-//   register(userData: any): Observable<any> {
-//     console.log('AuthService: Registering user', userData);
-//     // Тут буде реальний POST-запит на /api/auth/register
-//     // Зараз просто імітуємо успіх
-//     return of({ success: true, message: 'User registered successfully!' }).pipe(delay(1000));
-//   }
-// }
-
-
-import { Injectable, inject, signal } from '@angular/core'; // Ensure 'signal' is imported
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { delay, tap } from 'rxjs/operators';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
+import { ParticipationService } from './participation.service';
 
-// Interfaces
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-export interface AuthResponse {
-  token: string;
-  user: User;
-}
+export interface User { id: string; name: string; email: string; }
+export interface AuthResponse { token: string; user: User; }
 
-// Keys for localStorage
-const FAKE_USER_KEY = 'fake_auth_user';
-const FAKE_TOKEN_KEY = 'fake_auth_token';
+interface RegisterUserDto { name: string; email: string; password: string; }
+interface LoginRequestDto { email: string; password: string; }
 
-@Injectable({
-  providedIn: 'root'
-})
+const AUTH_USER_KEY = 'auth_user';
+const AUTH_TOKEN_KEY = 'auth_token';
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private http = inject(HttpClient);
-  private router = inject(Router);
+    private http = inject(HttpClient);
+    private router = inject(Router);
+    private participationService = inject(ParticipationService);
+    private apiUrl = environment.apiUrl;
 
-  // --- Reactive State using Signals ---
-  // Ensure these lines are exactly like this
-  currentUser = signal<User | null>(this.getUserFromStorage());
-  isAuthenticated = signal<boolean>(!!this.getTokenFromStorage()); // This is the signal
+    currentUser = signal<User | null>(this.getUserFromStorage());
+    isAuthenticated = signal<boolean>(!!this.getTokenFromStorage());
 
-  // --- Login Method ---
-  login(credentials: { email: string, password: string }): Observable<AuthResponse> {
-    console.log('AuthService: Logging in with', credentials);
-    // --- SIMULATION ---
-    if (credentials.email === 'test@test.com' && credentials.password === 'password123') {
-      const mockSuccessResponse: AuthResponse = {
-        token: 'fake-jwt-token-from-service-123',
-        user: { id: 'user1', name: 'Test User', email: 'test@test.com' }
-      };
-      return of(mockSuccessResponse).pipe(
-        delay(1000),
-        tap(response => this.setAuthState(response)) // Save state on success
-      );
-    } else {
-      const mockErrorResponse = { status: 401, message: 'Invalid credentials' };
-      return throwError(() => mockErrorResponse).pipe(delay(1000));
+    constructor() {
+      
+      if (this.isAuthenticated()) {
+        console.log('🔄 User already authenticated, loading participations...');
+        this.participationService.loadInitialParticipations();
+      }
     }
-  }
 
-  // --- Register Method (Simulation) ---
-  register(userData: any): Observable<any> {
-    console.log('AuthService: Registering user', userData);
-    // Add logic here later if needed, e.g., auto-login after register
-    return of({ success: true, message: 'User registered successfully!' }).pipe(delay(1000));
-  }
-
-  // --- Logout Method ---
-  logout(): void {
-    console.log('AuthService: Logging out');
-    localStorage.removeItem(FAKE_USER_KEY);
-    localStorage.removeItem(FAKE_TOKEN_KEY);
-    this.currentUser.set(null); // Update signals
-    this.isAuthenticated.set(false);
-    this.router.navigate(['/auth/login']); // Redirect
-  }
-
-  // --- Helper Methods ---
-  private setAuthState(response: AuthResponse): void {
-    localStorage.setItem(FAKE_USER_KEY, JSON.stringify(response.user));
-    localStorage.setItem(FAKE_TOKEN_KEY, response.token);
-    this.currentUser.set(response.user); // Update signal
-    this.isAuthenticated.set(true); // Update signal
-    console.log('AuthService: State updated and saved');
-  }
-
-  private getUserFromStorage(): User | null {
-    const userJson = typeof localStorage !== 'undefined' ? localStorage.getItem(FAKE_USER_KEY) : null;
-    try {
-        return userJson ? JSON.parse(userJson) : null;
-    } catch (e) {
-        console.error("Error parsing user from localStorage", e);
-        localStorage.removeItem(FAKE_USER_KEY); // Clear corrupted data
-        return null;
+    login(credentials: LoginRequestDto): Observable<AuthResponse> {
+        console.log('🔐 AuthService: Sending login request...');
+        return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
+            tap(response => {
+                this.setAuthState(response);
+                console.log('✅ Login successful, loading participations...');
+                this.participationService.loadInitialParticipations();
+            }),
+            catchError(this.handleAuthError)
+        );
     }
-  }
 
-  private getTokenFromStorage(): string | null {
-     return typeof localStorage !== 'undefined' ? localStorage.getItem(FAKE_TOKEN_KEY) : null;
-  }
+    register(userData: RegisterUserDto): Observable<User> {
+        console.log('📝 AuthService: Sending register request...');
+        return this.http.post<User>(`${this.apiUrl}/auth/register`, userData).pipe(
+            tap(() => console.log('✅ Registration successful')),
+            catchError(this.handleAuthError)
+        );
+    }
 
-  getCurrentUserId(): string | null {
-    return this.currentUser()?.id ?? null; // Call signal to get value
-  }
+    logout(): void {
+        console.log('🚪 AuthService: Logging out...');
+       
+        this.participationService.clearParticipations();
+        
+        
+        localStorage.removeItem(AUTH_USER_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        
+        
+        this.currentUser.set(null);
+        this.isAuthenticated.set(false);
+        
+        this.router.navigate(['/auth/login']);
+        
+        console.log('✅ Logout complete');
+    }
+
+    getToken(): string | null {
+        return localStorage.getItem(AUTH_TOKEN_KEY);
+    }
+    
+    getCurrentUserId(): string | null {
+      return this.currentUser()?.id ?? null;
+    }
+
+    private setAuthState(response: AuthResponse): void {
+        if (!response?.token || !response?.user) {
+            console.error("❌ Invalid auth response received:", response);
+            return;
+        }
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user));
+        localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+        this.currentUser.set(response.user);
+        this.isAuthenticated.set(true);
+        console.log('✅ Auth state updated');
+    }
+
+    private getUserFromStorage(): User | null {
+        if (typeof localStorage === 'undefined') return null;
+        
+        const userJson = localStorage.getItem(AUTH_USER_KEY);
+        if (!userJson) return null;
+        
+        try {
+            return JSON.parse(userJson);
+        } catch (e) {
+            console.error("❌ Error parsing user from localStorage", e);
+            return null;
+        }
+    }
+
+    private getTokenFromStorage(): string | null {
+        return (typeof localStorage !== 'undefined') 
+          ? localStorage.getItem(AUTH_TOKEN_KEY) 
+          : null;
+    }
+
+    private handleAuthError(error: HttpErrorResponse): Observable<never> {
+        console.error('❌ AuthService API Error:', error);
+        let errorMessage = 'An unknown error occurred.';
+        
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 401) {
+          errorMessage = 'Invalid credentials.';
+        } else if (error.status === 400) {
+          errorMessage = 'Invalid input. Please check the form.';
+        } else if (error.status === 0) {
+          errorMessage = 'Could not connect to the server.';
+        }
+        
+        return throwError(() => ({ message: errorMessage, status: error.status }));
+    }
 }

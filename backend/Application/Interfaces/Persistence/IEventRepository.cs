@@ -7,23 +7,22 @@ namespace Application.Interfaces.Persistence;
 
 public interface IEventRepository
 {
-    // Get a single event by its ID
+    
     Task<Event?> GetEventByIdAsync(Guid id);
 
-    // Get a list of all public events (potentially with filtering/paging later)
-    Task<IEnumerable<Event>> GetPublicEventsAsync();
+    Task<int> GetPublicEventsCountAsync(string? searchTerm = null);
 
-    // Get events organized by or participated in by a specific user
+    Task<IEnumerable<Event>> GetPublicEventsAsync(
+    string? searchTerm = null,
+    int page = 1,
+    int pageSize = 12);
+
     Task<IEnumerable<Event>> GetEventsForUserAsync(Guid userId);
 
-    // Add a new event
     Task AddEventAsync(Event eventEntity);
 
-    // Update an existing event
     Task UpdateEventAsync(Event eventEntity);
 
-    // Delete an event
     Task DeleteEventAsync(Guid id);
 
-    // Add other event-related methods as needed
 }

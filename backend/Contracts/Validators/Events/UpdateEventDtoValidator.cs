@@ -8,7 +8,7 @@ public class UpdateEventDtoValidator : AbstractValidator<UpdateEventDto>
 {
     public UpdateEventDtoValidator()
     {
-        // Only validate fields IF they are provided in the PATCH request
+        
         RuleFor(x => x.Title)
             .MaximumLength(200).When(x => x.Title != null)
             .WithMessage("Title cannot exceed 200 characters.");
