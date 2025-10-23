@@ -6,6 +6,7 @@ CREATE TABLE "Users" (
 );
 CREATE INDEX IF NOT EXISTS "IX_Users_Email" ON "Users" ("Email");
 
+
 CREATE TABLE "Events" (
     "Id" UUID PRIMARY KEY,
     "Name" VARCHAR(200) NOT NULL,
@@ -33,3 +34,23 @@ CREATE TABLE "Participants" (
 );
 CREATE INDEX IF NOT EXISTS "IX_Participants_EventId" ON "Participants" ("EventId");
 CREATE INDEX IF NOT EXISTS "IX_Participants_UserId" ON "Participants" ("UserId");
+
+
+CREATE TABLE "Tags" (
+    "Id" UUID PRIMARY KEY,
+    "Name" VARCHAR(50) NOT NULL UNIQUE
+);
+CREATE INDEX IF NOT EXISTS "IX_Tags_Name" ON "Tags" ("Name");
+
+
+CREATE TABLE "EventTags" (
+    "EventId" UUID NOT NULL,
+    "TagId" UUID NOT NULL,
+    CONSTRAINT "PK_EventTags" PRIMARY KEY ("EventId", "TagId"),
+    CONSTRAINT "FK_EventTags_Events_EventId" FOREIGN KEY ("EventId")
+        REFERENCES "Events" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_EventTags_Tags_TagId" FOREIGN KEY ("TagId")
+        REFERENCES "Tags" ("Id") ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "IX_EventTags_TagId" ON "EventTags" ("TagId");
+

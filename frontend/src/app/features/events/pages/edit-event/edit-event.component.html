@@ -1,90 +1,106 @@
-<ng-container *ngIf="vm$ | async as vm">
+<!-- Спінер, поки завантажуються початкові дані події -->
+<div *ngIf="isLoading" class="loading-spinner">
+  <mat-spinner></mat-spinner>
+</div>
 
-  <div *ngIf="vm.isLoading" class="loading-spinner">
-    <mat-spinner></mat-spinner>
-  </div>
+<!-- Форма, яка відображається після завантаження даних -->
+<div *ngIf="!isLoading && eventForm" class="form-container">
+  <mat-card class="form-card">
+    <mat-card-header>
+      <button mat-icon-button class="back-button" [routerLink]="['/events', eventId]">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <mat-card-title>Edit Event</mat-card-title>
+        <mat-card-subtitle>Update the details for your event</mat-card-subtitle>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
+        
+        <!-- Поля: Title, Description, Date/Time, Location -->
+        <mat-form-field appearance="outline">
+          <mat-label>Event Title</mat-label>
+          <input matInput formControlName="title">
+          <mat-error *ngIf="hasError('title', 'required')">Title is required.</mat-error>
+        </mat-form-field>
 
-  <div *ngIf="!vm.isLoading && eventForm" class="form-container">
-    <mat-card class="form-card">
-      <mat-card-header>
-        <button mat-icon-button class="back-button" [routerLink]="['/events', vm.eventId]">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-        <div>
-          <mat-card-title>Edit Event</mat-card-title>
-          <mat-card-subtitle>Update the details for your event</mat-card-subtitle>
+        <mat-form-field appearance="outline">
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="description" rows="4"></textarea>
+        </mat-form-field>
+
+        <div class="date-time-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Date</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="date" [min]="minDate" readonly>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Time</mat-label>
+            <input matInput [ngxTimepicker]="timePicker" formControlName="time" [format]="24" readonly>
+            <mat-icon matIconSuffix (click)="timePicker.open()">watch_later</mat-icon>
+          </mat-form-field>
+          <ngx-material-timepicker #timePicker></ngx-material-timepicker>
         </div>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="eventForm" (ngSubmit)="onSubmit(vm.eventId)">
-          <mat-form-field appearance="outline">
-            <mat-label>Event Title</mat-label>
-            <input matInput formControlName="title">
-            <mat-error *ngIf="hasError('title', 'required')">Title is required.</mat-error>
-            <mat-error *ngIf="hasError('title', 'minlength')">Title is too short.</mat-error>
-          </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" rows="4"></textarea>
-          </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Location</mat-label>
+          <input matInput formControlName="location">
+          <mat-error *ngIf="hasError('location', 'required')">Location is required.</mat-error>
+        </mat-form-field>
 
-          <div class="date-time-row">
-            <mat-form-field appearance="outline">
-              <mat-label>Date</mat-label>
-              <input matInput [matDatepicker]="picker" formControlName="date" [min]="minDate" readonly>
-              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-              <mat-error *ngIf="hasError('date', 'required')">Date is required.</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Time</mat-label>
-              <input matInput [ngxTimepicker]="timePicker" formControlName="time" readonly>
-              <mat-icon matIconSuffix (click)="timePicker.open()">watch_later</mat-icon>
-              <mat-error *ngIf="hasError('time', 'required')">Time is required.</mat-error>
-            </mat-form-field>
-            <ngx-material-timepicker #timePicker></ngx-material-timepicker>
-          </div>
-          <mat-error *ngIf="formHasDateError" class="form-level-error">
-                Event date and time cannot be in the past.
-           </mat-error>
+        <!-- Поле для редагування тегів -->
+        <mat-form-field class="chip-list-field" appearance="outline">
+          <mat-label>Tags (up to 5)</mat-label>
+          <mat-chip-grid #chipGrid aria-label="Enter tags">
+            <mat-chip-row *ngFor="let tag of tags" (removed)="removeTag(tag)">
+              {{tag}}
+              <button matChipRemove [attr.aria-label]="'remove ' + tag">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip-row>
+          </mat-chip-grid>
+          <input placeholder="New tag..."
+                 #tagInput
+                 [formControl]="tagCtrl"
+                 [matChipInputFor]="chipGrid"
+                 [matAutocomplete]="auto"
+                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 (matChipInputTokenEnd)="addTag($event)"/>
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedTag($event)">
+            <mat-option *ngFor="let tag of filteredTags | async" [value]="tag">
+              {{tag}}
+            </mat-option>
+          </mat-autocomplete>
+          <mat-hint>Press Enter or comma to add a new tag.</mat-hint>
+        </mat-form-field>
 
+        <!-- Поля: Capacity, Visibility -->
+        <mat-form-field appearance="outline">
+          <mat-label>Capacity (optional)</mat-label>
+          <input matInput formControlName="capacity" type="number">
+          <mat-error *ngIf="hasError('capacity', 'min')">Capacity must be 0 or a positive number.</mat-error>
+        </mat-form-field>
+        <div class="visibility-group">
+          <mat-label class="visibility-label">Visibility:</mat-label>
+          <mat-radio-group formControlName="visibility">
+            <mat-radio-button value="Public">Public</mat-radio-button>
+            <mat-radio-button value="Private">Private</mat-radio-button>
+          </mat-radio-group>
+        </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Location</mat-label>
-            <input matInput formControlName="location">
-             <mat-error *ngIf="hasError('location', 'required')">Location is required.</mat-error>
-          </mat-form-field>
+        <!-- Кнопки -->
+        <mat-card-actions class="form-actions">
+          <button type="button" mat-button (click)="onCancel()">Cancel</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="eventForm.invalid || isLoading">
+            <span *ngIf="!isLoading">Save Changes</span>
+            <span *ngIf="isLoading">Saving...</span>
+          </button>
+        </mat-card-actions>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Capacity (optional)</mat-label>
-            <input matInput formControlName="capacity" type="number">
-            <mat-error *ngIf="hasError('capacity', 'min')">Capacity must be at least 1.</mat-error>
-          </mat-form-field>
-
-          <div class="visibility-group">
-            <mat-label class="visibility-label">Visibility:</mat-label>
-            <mat-radio-group formControlName="visibility">
-              <mat-radio-button value="Public">Public</mat-radio-button>
-              <mat-radio-button value="Private">Private</mat-radio-button>
-            </mat-radio-group>
-          </div>
-
-          <mat-card-actions class="form-actions">
-            <button type="button" mat-button (click)="onCancel(vm.eventId)">Cancel</button>
-            <button mat-raised-button color="primary" type="submit" [disabled]="eventForm.invalid || vm.isSaving">
-              <span *ngIf="!vm.isSaving">Save Changes</span>
-              <span *ngIf="vm.isSaving">Saving...</span>
-            </button>
-          </mat-card-actions>
-        </form>
-      </mat-card-content>
-    </mat-card>
-  </div>
-
-   <div *ngIf="!vm.isLoading && !vm.event" class="form-container">
-       <p>Could not load event data.</p>
-       <a routerLink="/events">Back to events</a>
-   </div>
-
-</ng-container>

@@ -58,3 +58,5 @@ C:\Users\Ільків Іван\source\repos\RadencyEventApp\backend\WebAPI\obj\D
 C:\Users\Ільків Іван\source\repos\RadencyEventApp\backend\WebAPI\obj\Debug\net9.0\WebAPI.pdb
 C:\Users\Ільків Іван\source\repos\RadencyEventApp\backend\WebAPI\obj\Debug\net9.0\WebAPI.genruntimeconfig.cache
 C:\Users\Ільків Іван\source\repos\RadencyEventApp\backend\WebAPI\obj\Debug\net9.0\ref\WebAPI.dll
+C:\Users\Ільків Іван\source\repos\RadencyEventApp\backend\WebAPI\bin\Debug\net9.0\GroqNet.dll
+C:\Users\Ільків Іван\source\repos\RadencyEventApp\backend\WebAPI\bin\Debug\net9.0\System.Memory.Data.dll

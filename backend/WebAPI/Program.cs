@@ -17,6 +17,7 @@ using Application.Services;
 using WebAPI.Middleware;
 
 using Contracts.DTOs.Auth;
+using Infrastructure.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,8 @@ builder.Services.AddSingleton(new DbConnectionProvider(connectionString));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
-
+builder.Services.AddScoped<ITagRepository, TagRepository>(); 
+builder.Services.AddScoped<IEventTagRepository, EventTagRepository>();
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
@@ -37,6 +39,13 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IAiService, AIService>();
+builder.Services.AddScoped<IGroqApiClient, GroqApiClient>();
+builder.Services.AddHttpClient("GroqClient", client =>
+{
+    client.BaseAddress = new Uri("https://api.groq.com/openai/v1/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 
 builder.Services.AddControllers()

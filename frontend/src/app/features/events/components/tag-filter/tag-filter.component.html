@@ -1,0 +1,22 @@
+<div class="tag-filter-container">
+  <!-- Спінер, поки теги завантажуються -->
+  <div *ngIf="isLoading" class="spinner-container">
+    <mat-spinner diameter="30"></mat-spinner>
+  </div>
+
+  <!-- Список тегів, коли завантаження завершено -->
+  <ng-container *ngIf="tags$ | async as tags">
+    <mat-chip-listbox
+      *ngIf="!isLoading && tags.length > 0"
+      class="tag-list"
+      aria-label="Filter by tags"
+      multiple
+      [formControl]="tagsControl">
+      <!-- Перебираємо теги і створюємо "чіпси" -->
+      <mat-chip-option *ngFor="let tag of tags" [value]="tag.name">
+        {{ tag.name }}
+      </mat-chip-option>
+    </mat-chip-listbox>
+  </ng-container>
+</div>
+
