@@ -1,0 +1,21 @@
+.tag-filter-container {
+  min-height: 48px; /* Запобігає "стрибкам" контенту під час завантаження */
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.spinner-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.tag-list {
+  /* Дозволяє чіпсам переноситись на новий рядок */
+  ::ng-deep .mdc-evolution-chip-set__chips {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+

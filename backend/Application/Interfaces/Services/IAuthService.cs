@@ -1,7 +1,7 @@
 using Contracts.DTOs.Auth; 
 using System.Threading.Tasks;
 
-namespace Application.Interfaces.Services; 
+namespace Application.Interfaces.Services;
 
 public interface IAuthService
 {

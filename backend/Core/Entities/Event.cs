@@ -23,7 +23,8 @@ public class Event
     
     public Guid OrganizerId { get; set; }
     
-    public User Organizer { get; set; } = null!; 
+    public User Organizer { get; set; } = null!;
 
     public ICollection<Participant> Participants { get; set; } = new List<Participant>();
+    public ICollection<EventTag> EventTags { get; set; } = new List<EventTag>();
 }

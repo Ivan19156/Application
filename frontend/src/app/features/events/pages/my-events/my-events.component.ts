@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { NgIf, NgSwitch, NgSwitchCase, DatePipe } from '@angular/common';
 
 import { EventService } from '../../../../core/services/event.service';
+import { AiAssistantComponent } from '../../../ai/ai-assistant/ai-assistant.component';
 
 import { 
   CalendarEvent, 
@@ -38,6 +39,7 @@ const colors: any = {
     MatProgressSpinnerModule,
     CalendarMonthViewComponent,
     CalendarWeekViewComponent,
+    AiAssistantComponent
   ],
   templateUrl: './my-events.component.html',
   styleUrl: './my-events.component.scss',

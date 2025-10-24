@@ -34,6 +34,7 @@ services:
       - JwtSettings__Issuer=${JWT_ISSUER}
       - JwtSettings__Audience=${JWT_AUDIENCE}
       - JwtSettings__ExpiryMinutes=1440
+      - Groq__ApiKey=${GROQ_API_KEY}
     ports:
       - "5101:8080"
     depends_on:

@@ -1,6 +1,6 @@
-using Core.Entities; // Import User entity from Core layer
+using Core.Entities; 
 using System;
-using System.Threading.Tasks; // For async operations
+using System.Threading.Tasks; 
 
 namespace Application.Interfaces.Persistence;
 
