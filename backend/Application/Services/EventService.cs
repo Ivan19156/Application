@@ -31,6 +31,7 @@ public class EventService : IEventService
         _eventTagRepository = eventTagRepository;
     }
 
+    // ... (Методи GetPublicEventsAsync, GetEventDetailsByIdAsync, GetMyEventsAsync залишаються без змін) ...
     public async Task<PaginatedEventsDto> GetPublicEventsAsync(string? searchTerm = null, int page = 1, int pageSize = 12, List<string>? tags = null)
     {
         var totalCount = await _eventRepository.GetPublicEventsCountAsync(searchTerm, tags);
@@ -51,7 +52,7 @@ public class EventService : IEventService
                 Location = ev.Location,
                 Capacity = ev.Capacity,
                 ParticipantCount = participantCount,
-                OrganizerId = ev.OrganizerId, //
+                OrganizerId = ev.OrganizerId,
                 Tags = eventTags.Select(t => new TagDto { Id = t.Id, Name = t.Name }).ToList()
             });
         }
@@ -61,11 +62,10 @@ public class EventService : IEventService
             Events = eventDtos,
             TotalCount = totalCount,
             PageNumber = page,
-            PageSize = pageSize,
-            //HasNextPage = (page * pageSize) < totalCount
+            PageSize = pageSize
         };
     }
-
+    
     public async Task<(EventDetailsDto? Event, string? ErrorMessage)> GetEventDetailsByIdAsync(Guid id)
     {
         var eventEntity = await _eventRepository.GetEventByIdAsync(id);
@@ -119,17 +119,19 @@ public class EventService : IEventService
         return eventDtos;
     }
 
+
     public async Task<(EventDetailsDto? CreatedEvent, string? ErrorMessage)> CreateEventAsync(CreateEventDto createDto, Guid organizerId)
     {
         if (createDto.Tags.Count > 5)
         {
             return (null, "An event can have a maximum of 5 tags.");
         }
-
         if (!Enum.TryParse<EventVisibility>(createDto.Visibility, true, out var visibility))
         {
             return (null, "Invalid visibility value.");
         }
+        
+        // 👇 ВИПРАВЛЕННЯ: 'createDto.Date' - це вже готова дата/час з фронтенду
         if (createDto.Date <= DateTimeOffset.UtcNow)
         {
             return (null, "Event date must be in the future.");
@@ -140,7 +142,7 @@ public class EventService : IEventService
             Id = Guid.NewGuid(),
             Name = createDto.Title,
             Description = createDto.Description,
-            DateTime = createDto.Date,
+            DateTime = createDto.Date, // 👈 Просто використовуємо DTO.Date
             Location = createDto.Location,
             Capacity = createDto.Capacity,
             Visibility = visibility,
@@ -149,9 +151,14 @@ public class EventService : IEventService
 
         await _eventRepository.AddEventAsync(newEvent);
         
-        var tags = await _tagRepository.FindOrCreateTagsAsync(createDto.Tags);
-        if (tags.Any())
+        var normalizedTags = createDto.Tags
+            .Select(t => t.Trim().ToLower())
+            .Where(t => !string.IsNullOrEmpty(t))
+            .Distinct();
+
+        if (normalizedTags.Any())
         {
+            var tags = await _tagRepository.FindOrCreateTagsAsync(normalizedTags);
             await _eventTagRepository.AddTagsToEventAsync(newEvent.Id, tags.Select(t => t.Id));
         }
 
@@ -179,16 +186,19 @@ public class EventService : IEventService
         bool wasModified = false;
         if (updateDto.Title != null) { existingEvent.Name = updateDto.Title; wasModified = true; }
         if (updateDto.Description != null) { existingEvent.Description = updateDto.Description; wasModified = true; }
+        
+        // 👇 ВИПРАВЛЕННЯ: DTO.Date - це вже готова дата/час
         if (updateDto.Date != null)
         {
              if (updateDto.Date.Value <= DateTimeOffset.UtcNow) return (null, "Event date must be in the future.");
              existingEvent.DateTime = updateDto.Date.Value; wasModified = true;
         }
+
         if (updateDto.Location != null) { existingEvent.Location = updateDto.Location; wasModified = true; }
         
         if (updateDto.GetType().GetProperty(nameof(updateDto.Capacity)) != null) 
         {
-            if (updateDto.Capacity < 1 && updateDto.Capacity != null) return (null, "Capacity cannot be negative or zero.");
+            if (updateDto.Capacity < 0 && updateDto.Capacity != null) return (null, "Capacity cannot be negative.");
             existingEvent.Capacity = updateDto.Capacity; wasModified = true;
         }
 
@@ -205,15 +215,21 @@ public class EventService : IEventService
 
         if (updateDto.Tags != null)
         {
-            var tags = await _tagRepository.FindOrCreateTagsAsync(updateDto.Tags);
+            var normalizedTags = updateDto.Tags
+                .Select(t => t.Trim().ToLower())
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Distinct();
+            
+            var tags = await _tagRepository.FindOrCreateTagsAsync(normalizedTags);
             await _eventTagRepository.UpdateTagsForEventAsync(eventId, tags.Select(t => t.Id));
         }
 
         var (details, error) = await GetEventDetailsByIdAsync(eventId);
         return (details, error);
     }
-
-    public async Task<(bool Success, string? ErrorMessage)> DeleteEventAsync(Guid eventId, Guid userId)
+    
+    // ... (решта методів: Delete, Join, Leave...)
+public async Task<(bool Success, string? ErrorMessage)> DeleteEventAsync(Guid eventId, Guid userId)
     {
          var existingEvent = await _eventRepository.GetEventByIdAsync(eventId);
          if (existingEvent == null) return (false, "Event not found.");
@@ -250,5 +266,7 @@ public class EventService : IEventService
          if (string.IsNullOrEmpty(description) || description.Length <= maxLength) return description;
          return description.Substring(0, maxLength) + "...";
     }
+    // 👇 ВИДАЛЯЄМО: Цей метод більше не потрібен, оскільки комбінування відбувається на фронтенді
+    // private DateTimeOffset CombineDateTime(DateTime? date, string? time) { ... }
 }
 
