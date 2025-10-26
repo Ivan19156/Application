@@ -106,17 +106,7 @@ Backend API (Swagger UI) will be available at: http://localhost:5101/swagger
 
 Database (if you need to connect externally) is available on the host's port 5433.
 
-🔑 Test Credentials
 
-To log in, use one of the automatically seeded test users:
-
-Email: alice@example.com
-
-Password: password123
-
-Email: bob@example.com
-
-Password: password456
 
 🏗️ Project Structure
 
