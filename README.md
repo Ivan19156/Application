@@ -1,38 +1,26 @@
-Radency Event Management App
+Radency Event Management App (Stage 1 & 2)
 
-This is a full-stack application for event management, developed as a selection task for an internship at Radency. The project includes an Angular SPA for the frontend and an ASP.NET Core Web API for the backend, fully containerized using Docker.
+This is a full-stack application for event management, developed as a selection task for the Radency internship. The project includes an Angular SPA for the frontend, an ASP.NET Core Web API for the backend, and is fully containerized using Docker Compose.
 
-🚀 Core Features
-
-Authentication: User registration and login using JWT.
-
-Event Browsing: A public list of events with pagination and search functionality.
-
-Event Details: Complete information about an event, including its list of participants.
-
-Event Management: Users can create, edit, and delete their own events.
-
-Participation: Users can join and leave events.
-
-"My Events": A personalized calendar view showing events where the user is an organizer or a participant.
+It features a complete event management lifecycle, including JWT authentication, event CRUD, a tagging system, and an AI assistant powered by Groq.
 
 🛠️ Tech Stack
 
 Frontend
 
-Angular 17+ (Standalone Components)
+Angular 17+ (using Standalone Components)
 
 TypeScript
 
-RxJS for reactive programming
+RxJS (with ViewModel pattern using async pipe)
 
-Angular Material for UI components
+Angular Material (for UI components)
 
-angular-calendar for the "My Events" page
+angular-calendar & ngx-material-timepicker (for event scheduling)
 
-SCSS for styling
+SCSS (for styling)
 
-Nginx (in Docker) for serving static files and as a reverse proxy
+Nginx (as a reverse proxy in Docker)
 
 Backend
 
@@ -40,25 +28,63 @@ Backend
 
 ASP.NET Core Web API
 
-Clean Architecture (Core, Application, Infrastructure, WebAPI, Contracts)
+Clean Architecture (Core, Application, Infrastructure, Contracts, WebAPI)
 
-Dapper for data access
+Dapper (for high-performance data access)
 
-PostgreSQL as the database
+PostgreSQL (as the database)
 
-JWT for authentication
+JWT (JSON Web Tokens) (for authentication)
 
-FluentValidation for DTO validation
+FluentValidation (for server-side DTO validation)
 
-Swagger for API documentation
+Groq API (for the AI Assistant)
+
+Swagger/OpenAPI (for API documentation)
 
 DevOps
 
-Docker & Docker Compose for containerizing and orchestrating the entire stack.
+Docker & Docker Compose (for full stack containerization and orchestration)
+
+🚀 Core Features
+
+Stage 1: Core Functionality
+
+Authentication: Full JWT auth flow (Register, Login, Logout).
+
+Route Guards: Protected routes for authenticated users.
+
+Event CRUD: Create, Read, Update, and Delete events (organizers only).
+
+Event Participation: Users can Join and Leave public events.
+
+State Sync: Centralized ParticipationService ensures join status is consistent across all components.
+
+Calendar View: A "My Events" page (/my-events) showing a full calendar of the user's organized and joined events.
+
+Error Handling: Custom middleware on the backend and interceptors on the frontend for standardized error messages.
+
+Stage 2: Tags & AI
+
+Tagging System:
+
+Events can be created/edited with up to 5 tags (case-insensitive).
+
+Tags are displayed as chips on event cards and detail pages.
+
+Filtering: The main events list can be filtered by multiple tags simultaneously.
+
+AI Assistant:
+
+An AI chat interface on the "My Events" page.
+
+Uses the Groq API (llama3-70b-8192) to answer natural language questions.
+
+The backend builds a detailed context (user's events, public events, tags, participants) to provide accurate, data-aware answers.
 
 ⚙️ How to Run the Project
 
-You only need Docker Desktop installed to run this project.
+This project is fully containerized. You only need Docker Desktop installed and running.
 
 1. Clone the Repository
 
@@ -68,54 +94,77 @@ cd Application
 
 2. Create the .env File
 
-The project root contains an .env.example file, which serves as a template for your secret keys.
+This project uses a .env file to manage secret keys for the database, JWT, and AI.
 
-Copy .env.example and rename the copy to .env.
+Find the env.example file in the root directory.
 
-Open the new .env file and replace the placeholder for JWT_SECRET with your own strong, unique secret key (a long string of characters).
+Create a copy of it and rename the copy to .env.
 
-# Example .env file content
+Open the new .env file and fill in your actual secret keys:
+
+# .env file
+
+# 1. PostgreSQL Password (can leave as is for Docker)
 DB_PASSWORD=devpassword
+
+# 2. JWT Secret (REPLACE with your own long, random, strong secret)
 JWT_SECRET=YOUR_SUPER_STRONG_AND_VERY_LONG_SECRET_KEY_GOES_HERE
+
+# 3. JWT Issuer/Audience (can leave as is)
 JWT_ISSUER=RadencyEventApp
 JWT_AUDIENCE=RadencyEventAppClient
+
+# 4. Groq API Key (Get from [https://console.groq.com/keys](https://console.groq.com/keys))
+GROQ_API_KEY=gsk_YOUR_GROQ_API_KEY_HERE
 
 
 3. Run with Docker Compose
 
-Execute a single command from the project root directory:
+From the root directory (where docker-compose.yml is), run:
 
 docker-compose up --build
 
 
-This command will automatically:
+This command will:
 
-Build the Docker images for the frontend and backend.
+Build the frontend and backend images.
 
-Start containers for the database, backend, and frontend.
+Start the db, backend, and frontend containers.
 
-Create the database schema and seed it with test data (2 users, 3 events) on the first run.
+The db container will auto-create the schema and seed data from db-init/init.sql.
 
-4. Open the Application
+The backend will wait for the db to be "healthy" before starting.
 
-After the build and startup process is complete:
+4. Access the Application
 
-Frontend Application will be available at: http://localhost:8080
+Frontend Application:
+http://localhost:8080
 
-Backend API (Swagger UI) will be available at: http://localhost:5101/swagger
+Backend API (Swagger):
+http://localhost:5101/swagger
 
-Database (if you need to connect externally) is available on the host's port 5433.
+Database (External Tool):
 
+Host: localhost
 
+Port: 5433
 
-🏗️ Project Structure
+DB: radency_event_db
 
-The project is organized as a monorepo with two main folders: frontend and backend.
+User: devuser
 
-backend/: Contains the .NET Solution, structured according to Clean Architecture principles.
+Password: (the one you set in your .env file)
 
-frontend/: Contains the Angular SPA application.
+Test Credentials
 
-db-init/: Contains the init.sql script for creating the database schema.
+The database is seeded with two users:
 
-docker-compose.yml: The main orchestration file for running the entire stack in Docker.
+Email: alice@example.com
+
+Password: password123
+(Organizer of 'Angular Conf' and '.NET Meetup')
+
+Email: bob@example.com
+
+Password: password456
+(Organizer of 'Design Workshop' and 'Public AI Conference')
