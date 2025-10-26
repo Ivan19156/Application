@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Services;
 
@@ -15,158 +14,116 @@ public class AIService : IAiService
     private readonly IEventRepository _eventRepository;
     private readonly IUserRepository _userRepository;
     private readonly IParticipantRepository _participantRepository;
-    private readonly ILogger<AIService> _logger;
+    private readonly IEventTagRepository _eventTagRepository;
 
     public AIService(
         IGroqApiClient groqClient,
         IEventRepository eventRepository,
         IUserRepository userRepository,
         IParticipantRepository participantRepository,
-        ILogger<AIService> logger)
+        IEventTagRepository eventTagRepository)
     {
         _groqClient = groqClient;
         _eventRepository = eventRepository;
         _userRepository = userRepository;
         _participantRepository = participantRepository;
-        _logger = logger;
+        _eventTagRepository = eventTagRepository;
     }
 
     public async Task<string> GetAssistanceAsync(string userQuestion, Guid userId)
     {
-        try
-        {
-            
-            var context = await BuildContextAsync(userId);
-                        
-            var systemPrompt = BuildSystemPrompt(context);
+        var context = await BuildContextAsync(userId);
+        var systemPrompt = BuildSystemPrompt(context, userId); 
 
-            return await _groqClient.GenerateChatResponseAsync(systemPrompt, userQuestion);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting AI assistance for user {UserId}", userId);
-            throw;
-        }
+        Console.WriteLine("--- SYSTEM PROMPT ---");
+        Console.WriteLine(systemPrompt);
+        Console.WriteLine("--- USER QUESTION ---");
+        Console.WriteLine(userQuestion);
+
+        return await _groqClient.GenerateChatResponseAsync(systemPrompt, userQuestion);
     }
 
     private async Task<string> BuildContextAsync(Guid userId)
     {
         var user = await _userRepository.GetUserByIdAsync(userId);
-        var myEvents = await _eventRepository.GetEventsForUserAsync(userId);
-        
-        var publicEvents = await _eventRepository.GetPublicEventsAsync(
-            searchTerm: null, 
-            page: 1, 
-            pageSize: 15  
-        );
+        var allUserEvents = await _eventRepository.GetEventsForUserAsync(userId);
+             
+        var allPublicEvents = await _eventRepository.GetPublicEventsAsync(null, 1, 50); 
 
         var contextBuilder = new StringBuilder();
-        var now = DateTimeOffset.UtcNow;
-        
-        contextBuilder.AppendLine("=== USER INFORMATION ===");
-        contextBuilder.AppendLine($"Current User: {user?.Name} (ID: {user?.Id})");
-        contextBuilder.AppendLine($"Current Date: {now:yyyy-MM-dd HH:mm} UTC");
-        contextBuilder.AppendLine();
+        contextBuilder.AppendLine($"--- User Information ---");
+        contextBuilder.AppendLine($"Current User: {user?.Name} (ID: {userId}).");
+        contextBuilder.AppendLine($"Current Date and Time: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC.");
 
-        contextBuilder.AppendLine("=== MY EVENTS (Joined or Organized) ===");
-        if (myEvents.Any())
+        contextBuilder.AppendLine("\n--- Events You Are ORGANIZING ---");
+        var organizedEvents = allUserEvents.Where(e => e.OrganizerId == userId).ToList();
+        if (organizedEvents.Any())
         {
-            foreach (var ev in myEvents)
+            foreach (var ev in organizedEvents)
             {
-                var participantCount = await _participantRepository.GetParticipantCountAsync(ev.Id);
-                var isOrganizer = ev.OrganizerId == userId;
-                var daysUntil = (ev.DateTime - now).Days;
-                
-                contextBuilder.AppendLine($"- {ev.Name}");
-                contextBuilder.AppendLine($"  Date: {ev.DateTime:yyyy-MM-dd HH:mm} UTC (in {daysUntil} days)");
-                contextBuilder.AppendLine($"  Location: {ev.Location}");
-                contextBuilder.AppendLine($"  Role: {(isOrganizer ? "Organizer" : "Participant")}");
-                contextBuilder.AppendLine($"  Attendees: {participantCount}/{ev.Capacity?.ToString() ?? "Unlimited"}");
-                contextBuilder.AppendLine();
+                var tags = await _eventTagRepository.GetTagsForEventAsync(ev.Id);
+                var tagNames = tags.Any() ? string.Join(", ", tags.Select(t => t.Name)) : "none";
+                contextBuilder.AppendLine($"- Event: '{ev.Name}', Date: {ev.DateTime:yyyy-MM-dd HH:mm}, Location: {ev.Location}, Tags: [{tagNames}]");
             }
         }
         else
         {
-            contextBuilder.AppendLine("You have no events (not joined or organized any events yet).");
-            contextBuilder.AppendLine();
+            contextBuilder.AppendLine("You are not organizing any events.");
         }
 
-        contextBuilder.AppendLine("=== AVAILABLE PUBLIC EVENTS ===");
-        if (publicEvents.Any())
+        contextBuilder.AppendLine("\n--- Events You Have JOINED (as a participant) ---");
+        var joinedEvents = allUserEvents.Where(e => e.OrganizerId != userId).ToList();
+        if (joinedEvents.Any())
         {
-            var upcomingPublic = publicEvents
-                .Where(e => e.DateTime >= now)
-                .OrderBy(e => e.DateTime)
-                .ToList();
-
-            if (upcomingPublic.Any())
+            foreach (var ev in joinedEvents)
             {
-                contextBuilder.AppendLine($"There are {upcomingPublic.Count} upcoming public events:");
-                contextBuilder.AppendLine();
-                
-                foreach (var ev in upcomingPublic)
-                {
-                    var participantCount = await _participantRepository.GetParticipantCountAsync(ev.Id);
-                    var daysUntil = (ev.DateTime - now).Days;
-                    var isUserJoined = myEvents.Any(m => m.Id == ev.Id);
-                    
-                    contextBuilder.AppendLine($"- {ev.Name}");
-                    contextBuilder.AppendLine($"  Date: {ev.DateTime:yyyy-MM-dd HH:mm} UTC (in {daysUntil} days)");
-                    contextBuilder.AppendLine($"  Location: {ev.Location}");
-                    contextBuilder.AppendLine($"  Attendees: {participantCount}/{ev.Capacity?.ToString() ?? "Unlimited"}");
-                    contextBuilder.AppendLine($"  Status: {(isUserJoined ? "You are already joined" : "Available to join")}");
-                    
-                    if (!string.IsNullOrEmpty(ev.Description))
-                    {
-                        var shortDesc = ev.Description.Length > 80 
-                            ? ev.Description.Substring(0, 77) + "..." 
-                            : ev.Description;
-                        contextBuilder.AppendLine($"  Description: {shortDesc}");
-                    }
-                    contextBuilder.AppendLine();
-                }
-            }
-            else
-            {
-                contextBuilder.AppendLine("No upcoming public events available.");
-                contextBuilder.AppendLine();
+                var tags = await _eventTagRepository.GetTagsForEventAsync(ev.Id);
+                var tagNames = tags.Any() ? string.Join(", ", tags.Select(t => t.Name)) : "none";
+                contextBuilder.AppendLine($"- Event: '{ev.Name}', Date: {ev.DateTime:yyyy-MM-dd HH:mm}, Location: {ev.Location}, Tags: [{tagNames}]");
             }
         }
         else
         {
-            contextBuilder.AppendLine("No public events available.");
-            contextBuilder.AppendLine();
+            contextBuilder.AppendLine("You have not joined any events.");
+        }
+
+        contextBuilder.AppendLine("\n--- Other Available Public Events (for general search) ---");
+        var otherPublicEvents = allPublicEvents.Where(e => !allUserEvents.Any(ue => ue.Id == e.Id));
+        if (otherPublicEvents.Any())
+        {
+            foreach (var ev in otherPublicEvents.Take(20)) 
+            {
+                var tags = await _eventTagRepository.GetTagsForEventAsync(ev.Id);
+                var tagNames = tags.Any() ? string.Join(", ", tags.Select(t => t.Name)) : "none";
+                contextBuilder.AppendLine($"- Event: '{ev.Name}', Date: {ev.DateTime:yyyy-MM-dd HH:mm}, Location: {ev.Location}, Tags: [{tagNames}]");
+            }
+        }
+        else
+        {
+            contextBuilder.AppendLine("There are no other public events available right now.");
         }
 
         return contextBuilder.ToString();
     }
 
-    private string BuildSystemPrompt(string context)
+    private string BuildSystemPrompt(string context, Guid userId)
     {
         return $"""
-        You are a helpful AI assistant for an event management app.
-        
-        Your task is to answer the user's question based on the context below.
-        
-        **What you can help with:**
-        - Information about user's events (events they joined or organized)
-        - Information about available public events
-        - Event details like dates, locations, and participant counts
-        - Suggestions for events to join
-        
-        **Rules:**
-        1. Answer ONLY based on the context provided
-        2. If the answer is not in the context, say "I don't have that information"
-        3. Be concise and friendly
-        4. When mentioning dates, you can say "in X days"
-        5. Don't make up information
-        6. If the question is unclear or you can't understand what the user is asking, respond with: "Sorry, I didn't understand that. Please try rephrasing your question."
-        
+        You are "EventHorizon", a helpful AI assistant for an event management app.
+        Your task is to answer the user's question based *only* on the context provided below.
+        Today's date is {DateTimeOffset.UtcNow:yyyy-MM-dd}.
+        The user's ID is {userId}.
+
+        **Strict Rules:**
+        1.  Base all answers *only* on the information in the CONTEXT sections.
+        2.  Do not make up information. If the answer isn't in the context, say "I don't have that information."
+        3.  Be concise and friendly.
+        4.  When asked about the user's events, check BOTH "Events You Are ORGANIZING" AND "Events You Have JOINED".
+        5.  When asked about *other* events (e.g., "any public events", "find events"), you MUST look in the "Other Available Public Events" list.
+
         --- CONTEXT ---
         {context}
         --- END OF CONTEXT ---
-        
-        Now answer the user's question.
         """;
     }
 }
