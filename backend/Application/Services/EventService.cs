@@ -51,6 +51,7 @@ public class EventService : IEventService
                 Location = ev.Location,
                 Capacity = ev.Capacity,
                 ParticipantCount = participantCount,
+                OrganizerId = ev.OrganizerId, //
                 Tags = eventTags.Select(t => new TagDto { Id = t.Id, Name = t.Name }).ToList()
             });
         }
